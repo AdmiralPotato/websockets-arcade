@@ -1,0 +1,30 @@
+{
+  "name": "websockets-arcade",
+  "version": "1.0.0",
+  "description": "Ever wanted a multiplayer arcade cabinet experience, but with your phone as a controller?",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdmiralPotato/websockets-arcade.git"
+  },
+  "keywords": [
+    "websockets",
+    "game",
+    "multiplayer",
+    "arcade"
+  ],
+  "author": "Admiral Potato <admiral@nuclearpixel.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AdmiralPotato/websockets-arcade/issues"
+  },
+  "homepage": "https://github.com/AdmiralPotato/websockets-arcade#readme",
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "express": "^4.16.2",
+    "standard": "^10.0.3"
+  }
+}
