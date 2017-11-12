@@ -1,10 +1,11 @@
 window.shipComponent = {
   props: {
-    id: Number,
+    id: String,
     x: Number,
     y: Number,
     angle: Number,
-    color: String
+    color: String,
+    isPlayer: Boolean
   },
   computed: {
     transforms: function () {
@@ -17,7 +18,12 @@ window.shipComponent = {
     }
   },
   template: `
-      <g class="ship" :transform="transforms" :stroke="color">
+      <g
+        class="ship"
+        :class="{playerShip: isPlayer}"
+        :transform="transforms"
+        :style="'color: ' + color + ';'"
+      >
         <polygon points="4,0 -4,-4 -2,0 -4,4"/>
       </g>
     `

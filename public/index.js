@@ -3,36 +3,8 @@ window.Vue.component('main-view', window.mainViewComponent)
 
 window.app = {
   data: {
-    ships: [
-      {
-        id: 0,
-        x: 0.5,
-        y: 0,
-        angle: 0,
-        color: 'hsla(0, 100%, 50%, 1)'
-      },
-      {
-        id: 1,
-        x: -0.5,
-        y: 0,
-        angle: 180,
-        color: 'hsla(180, 100%, 50%, 1)'
-      },
-      {
-        id: 2,
-        x: 0,
-        y: 0.5,
-        angle: 90,
-        color: 'hsla(90, 100%, 50%, 1)'
-      },
-      {
-        id: 3,
-        x: 0,
-        y: -0.5,
-        angle: -90,
-        color: 'hsla(-90, 100%, 50%, 1)'
-      }
-    ]
+    playerId: '',
+    ships: []
   }
 }
 
@@ -40,6 +12,21 @@ window.app.vue = new window.Vue({
   el: '#appTarget',
   data: window.app.data,
   template: `
-    <main-view :ships="ships"></main-view>
+    <main-view :ships="ships" :playerId="playerId"></main-view>
   `
+})
+
+const socket = window.io.connect('//')
+
+socket.on('connect', () => {
+  window.app.data.playerId = socket.id
+})
+
+socket.on('players', function (data) {
+  console.log('Players online:', data)
+})
+
+socket.on('state', function (data) {
+  console.log('Game state:', data)
+  window.app.data.ships = data.ships
 })

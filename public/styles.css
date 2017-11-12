@@ -56,4 +56,10 @@ svg .bounding-rect {
 
 svg .ship {
   stroke-width: 1;
+  stroke: currentColor;
+  fill: transparent;
+}
+
+svg .ship.playerShip {
+  fill: currentColor;
 }

@@ -1,5 +1,6 @@
 window.mainViewComponent = {
   props: {
+    playerId: String,
     ships: Array
   },
   template: `
@@ -8,6 +9,7 @@ window.mainViewComponent = {
       <ship
         v-for="ship in ships"
         v-bind="ship"
+        :isPlayer="ship.id === playerId"
         :key="ship.id"
         ></ship>
     </svg>
