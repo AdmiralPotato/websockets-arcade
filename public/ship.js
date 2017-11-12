@@ -1,3 +1,5 @@
+window.tau = Math.PI * 2
+
 window.shipComponent = {
   props: {
     id: String,
@@ -11,7 +13,7 @@ window.shipComponent = {
     transforms: function () {
       const transforms = [
         'translate(' + this.x + ', ' + this.y + ')',
-        'rotate(' + this.angle + ')',
+        'rotate(' + ((this.angle / window.tau) * 360) + ')',
         'scale(0.015625)'
       ]
       return transforms.join('')

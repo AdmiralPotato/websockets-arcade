@@ -25,7 +25,9 @@
   "dependencies": {
     "dotenv": "^4.0.0",
     "express": "^4.16.2",
+    "nipplejs": "^0.6.7",
     "socket.io": "^2.0.4",
-    "standard": "^10.0.3"
+    "standard": "^10.0.3",
+    "vue": "^2.5.3"
   }
 }

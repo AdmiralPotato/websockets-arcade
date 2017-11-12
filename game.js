@@ -13,6 +13,9 @@ const game = {
   connectWebSockets: (io) => {
     io.on('connection', function (socket) {
       game.addPlayer(socket)
+      socket.on('move', function (moveData) {
+        game.movePlayer(socket, moveData)
+      })
       socket.on('disconnect', function () {
         game.removePlayer(socket)
       })
@@ -39,6 +42,13 @@ const game = {
     arrayRemove(game.playerSockets, socket)
     arrayRemove(game.state.ships, socket.ship)
     game.reportPlayerCount(socket)
+  },
+  movePlayer: (socket, moveData) => {
+    const angle = moveData.angle !== undefined ? -moveData.angle : socket.ship.angle
+    socket.ship.angle = angle
+    socket.ship.x = Math.cos(angle) * moveData.force
+    socket.ship.y = Math.sin(angle) * moveData.force
+    socket.server.emit('state', game.state)
   },
   reportPlayerCount: (socket) => {
     console.log('Connected players:', game.playerSockets.length)

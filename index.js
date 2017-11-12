@@ -1,4 +1,5 @@
 require('dotenv').config()
+const path = require('path')
 const express = require('express')
 const app = express()
 const http = require('http')
@@ -6,8 +7,15 @@ const server = http.Server(app)
 const io = require('socket.io')(server)
 const game = require('./game.js')
 const port = process.env.PORT || 3000
+const clientDependencyMap = {
+  '/vue': 'node_modules/vue/dist',
+  '/nipplejs': 'node_modules/nipplejs/dist'
+}
 
 app.use('/', express.static('public'))
+for (const [key, value] of Object.entries(clientDependencyMap)) {
+  app.use(key, express.static(path.join(__dirname, value)))
+}
 
 app.get('/data', function (request, response) {
   response.json({
