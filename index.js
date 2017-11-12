@@ -13,9 +13,9 @@ const clientDependencyMap = {
 }
 
 app.use('/', express.static('public'))
-for (const [key, value] of Object.entries(clientDependencyMap)) {
-  app.use(key, express.static(path.join(__dirname, value)))
-}
+Object.keys(clientDependencyMap).forEach((key) => {
+  app.use(key, express.static(path.join(__dirname, clientDependencyMap[key])))
+})
 
 app.get('/data', function (request, response) {
   response.json({
