@@ -27,7 +27,6 @@ socket.on('players', function (data) {
 })
 
 socket.on('state', function (data) {
-  console.log('Game state:', data)
   window.app.data.ships = data.ships
 })
 
@@ -47,7 +46,7 @@ window.joystickManager = window.nipplejs.create(joystickOptions)
 
 window.joystickManager.on('move', (allJoystickValues, currentJoystickValues) => {
   socket.emit(
-    'move',
+    'change',
     {
       force: currentJoystickValues.force,
       angle: currentJoystickValues.angle.radian
@@ -56,10 +55,5 @@ window.joystickManager.on('move', (allJoystickValues, currentJoystickValues) => 
 })
 
 window.joystickManager.on('end', () => {
-  socket.emit(
-    'move',
-    {
-      force: 0
-    }
-  )
+  socket.emit('release')
 })
