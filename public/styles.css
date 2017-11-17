@@ -55,11 +55,21 @@ svg .bounding-rect {
 }
 
 svg .ship {
-  stroke-width: 1;
+  stroke-width: 0.025rem;
   stroke: currentColor;
   fill: transparent;
 }
 
 svg .ship.playerShip {
   fill: currentColor;
+}
+
+svg .asteroid {
+  stroke-width: 0.025rem;
+  stroke: #fff;
+  fill: transparent;
+}
+
+svg .hit {
+  opacity: 0.5;
 }

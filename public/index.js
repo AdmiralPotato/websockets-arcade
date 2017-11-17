@@ -1,10 +1,12 @@
 window.Vue.component('ship', window.shipComponent)
+window.Vue.component('asteroid', window.asteroidComponent)
 window.Vue.component('main-view', window.mainViewComponent)
 
 window.app = {
   data: {
     playerId: '',
-    ships: []
+    ships: [],
+    asteroids: []
   }
 }
 
@@ -12,7 +14,11 @@ window.app.vue = new window.Vue({
   el: '#appTarget',
   data: window.app.data,
   template: `
-    <main-view :ships="ships" :playerId="playerId"></main-view>
+    <main-view
+      :ships="ships"
+      :asteroids="asteroids"
+      :playerId="playerId"
+    />
   `
 })
 
@@ -28,6 +34,7 @@ socket.on('players', function (data) {
 
 socket.on('state', function (data) {
   window.app.data.ships = data.ships
+  window.app.data.asteroids = data.asteroids
 })
 
 const joystickOptions = {

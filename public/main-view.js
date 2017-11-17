@@ -1,7 +1,8 @@
 window.mainViewComponent = {
   props: {
     playerId: String,
-    ships: Array
+    ships: Array,
+    asteroids: Array
   },
   template: `
     <svg viewBox="-1 -1 2 2">
@@ -11,7 +12,12 @@ window.mainViewComponent = {
         v-bind="ship"
         :isPlayer="ship.id === playerId"
         :key="ship.id"
-        ></ship>
+      />
+      <asteroid
+        v-for="asteroid in asteroids"
+        v-bind="asteroid"
+        :key="asteroid.id"
+      />
     </svg>
   `
 }
