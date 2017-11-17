@@ -14,7 +14,7 @@ window.shipComponent = {
       const transforms = [
         'translate(' + this.x + ', ' + this.y + ')',
         'rotate(' + ((this.angle / window.tau) * 360) + ')',
-        'scale(0.015625)'
+        'scale(0.01)'
       ]
       return transforms.join('')
     }

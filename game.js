@@ -8,7 +8,7 @@ const arrayRemove = function (array, item) {
 const game = {
   playerSockets: [],
   drag: 0.955,
-  topSpeed: 1 / 40,
+  topSpeed: 1 / 80,
   state: {
     ships: []
   },
