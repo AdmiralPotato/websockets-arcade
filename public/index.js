@@ -5,9 +5,9 @@ window.Vue.component('main-view', window.mainViewComponent)
 window.app = {
   data: {
     playerId: '',
-    ships: [],
-    asteroids: []
-  }
+    state: {}
+  },
+  lastServerState: {}
 }
 
 window.app.vue = new window.Vue({
@@ -15,8 +15,7 @@ window.app.vue = new window.Vue({
   data: window.app.data,
   template: `
     <main-view
-      :ships="ships"
-      :asteroids="asteroids"
+      v-bind="state"
       :playerId="playerId"
     />
   `
@@ -33,9 +32,15 @@ socket.on('players', function (data) {
 })
 
 socket.on('state', function (data) {
-  window.app.data.ships = data.ships
-  window.app.data.asteroids = data.asteroids
+  window.app.lastServerState = data
 })
+
+const gameRenderLoop = () => {
+  window.requestAnimationFrame(gameRenderLoop)
+  window.app.data.state = window.app.lastServerState
+}
+
+window.requestAnimationFrame(gameRenderLoop)
 
 const joystickOptions = {
   zone: document.body,

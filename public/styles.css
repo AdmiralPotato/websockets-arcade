@@ -23,6 +23,7 @@ body {
   text-align: left;
   text-decoration: none;
   color: #ccc;
+  overflow: hidden;
 }
 * {
   margin: 0;
@@ -47,15 +48,15 @@ svg {
 
 svg * {
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-width: 0.25vmin;
 }
 
 svg .bounding-rect {
-  stroke-width: 0.015625;
   stroke: #fff;
 }
 
 svg .ship {
-  stroke-width: 0.025rem;
   stroke: currentColor;
   fill: transparent;
 }
