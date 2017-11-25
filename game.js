@@ -141,7 +141,6 @@ const game = {
     socket.ship.angle = moveData.angle !== undefined ? -moveData.angle : socket.ship.angle
   },
   controlRelease: (socket) => {
-    console.log('player took their finger off pad')
     socket.onTime = null
   },
   reportPlayerCount: (socket) => {
