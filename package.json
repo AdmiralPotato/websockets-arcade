@@ -6,6 +6,13 @@
   "scripts": {
     "start": "node index.js"
   },
+  "eslintConfig": {
+    "extends": "standard",
+    "env": {
+      "browser": true,
+      "node": true
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AdmiralPotato/websockets-arcade.git"
@@ -29,5 +36,8 @@
     "socket.io": "^2.0.4",
     "standard": "^10.0.3",
     "vue": "^2.5.3"
+  },
+  "devDependencies": {
+    "eslint-config-standard": "^10.2.1"
   }
 }
