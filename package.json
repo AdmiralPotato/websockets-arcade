@@ -4,7 +4,8 @@
   "description": "Ever wanted a multiplayer arcade cabinet experience, but with your phone as a controller?",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "standard"
   },
   "eslintConfig": {
     "extends": "standard",
@@ -34,10 +35,10 @@
     "express": "^4.16.2",
     "nipplejs": "^0.6.7",
     "socket.io": "^2.0.4",
-    "standard": "^10.0.3",
     "vue": "^2.5.3"
   },
   "devDependencies": {
-    "eslint-config-standard": "^10.2.1"
+    "eslint-config-standard": "^10.2.1",
+    "standard": "^10.0.3"
   }
 }
