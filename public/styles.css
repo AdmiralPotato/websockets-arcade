@@ -74,3 +74,7 @@ svg .asteroid {
 svg .hit {
   opacity: 0.5;
 }
+
+svg .asteroid.consumable {
+  stroke: #0f0;
+}

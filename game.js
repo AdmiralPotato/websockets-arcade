@@ -11,7 +11,9 @@ const game = {
   drag: 0.955,
   topSpeed: 1 / 80,
   shipRadius: 1 / 40,
-  asteroidRadius: 1 / 30,
+  asteroidRadiusMin: 1 / 90,
+  asteroidRadiusMax: 1 / 15,
+  asteroidCount: 0,
   state: {
     ships: [],
     asteroids: []
@@ -31,10 +33,9 @@ const game = {
         game.removePlayer(socket)
       })
     })
-    let asteroidCounter = 0
     while (game.state.asteroids.length < 10) {
       game.state.asteroids.push(
-        game.createAsteroid(asteroidCounter++)
+        game.createAsteroid()
       )
     }
     setInterval(
@@ -42,6 +43,7 @@ const game = {
         const now = Date.now()
         game.tickPlayers(now)
         game.tickAsteroids(now)
+        game.state.asteroids = game.state.asteroids.filter((asteroid) => { return !asteroid.expired })
         io.emit('state', game.state)
       },
       10
@@ -74,12 +76,19 @@ const game = {
       asteroid.y += asteroid.yVel
       asteroid.angle += asteroid.rotationSpeed
       game.wrap(asteroid)
-      asteroid.hit = false
-      game.state.ships.forEach(ship => {
-        const hit = game.detectCollision(ship, asteroid)
-        asteroid.hit = asteroid.hit || hit
-        ship.hit = ship.hit || hit
-      })
+      if (asteroid.invincible > 0) {
+        asteroid.invincible --
+      } else {
+        game.state.ships.forEach(ship => {
+          const hit = game.detectCollision(ship, asteroid)
+          asteroid.hit = asteroid.hit || hit
+          asteroid.expired = asteroid.expired || hit
+          if (asteroid.hit && asteroid.radius / 2 >= game.asteroidRadiusMin) {
+            game.splitAsteroid(asteroid)
+          }
+          ship.hit = ship.hit || hit
+        })
+      }
     })
   },
   wrap: (target) => {
@@ -113,20 +122,35 @@ const game = {
       hit: false
     }
   },
-  createAsteroid: (index) => {
+  createAsteroid: (
+    x = (Math.random() - 0.5) * 2,
+    y = (Math.random() - 0.5) * 2,
+    radius = Math.max(game.asteroidRadiusMax * Math.random(), game.asteroidRadiusMin)
+  ) => {
     const angle = Math.random() * tau
     const speed = Math.min((1 / 800), Math.random() * (1 / 600))
     return {
-      id: index,
-      x: (Math.random() - 0.5) * 2,
-      y: (Math.random() - 0.5) * 2,
+      id: game.asteroidCount++,
+      x: x,
+      y: y,
       xVel: Math.cos(angle) * speed,
       yVel: Math.sin(angle) * speed,
       rotationSpeed: speed * Math.sign(Math.random() - 0.5),
-      radius: game.asteroidRadius,
+      radius: radius,
       angle: angle,
-      hit: false
+      hit: false,
+      expired: false,
+      invincible: 100
     }
+  },
+  splitAsteroid: (asteroid) => {
+    const x = asteroid.x
+    const y = asteroid.y
+    const radius = asteroid.radius / 2
+    game.state.asteroids.push(
+      game.createAsteroid(x, y, radius),
+      game.createAsteroid(x, y, radius)
+    )
   },
   removePlayer: (socket) => {
     arrayRemove(game.playerSockets, socket)
