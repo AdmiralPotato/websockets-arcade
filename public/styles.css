@@ -50,10 +50,25 @@ svg * {
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
   stroke-width: 0.25vmin;
+  stroke: currentColor;
 }
 
 svg .bounding-rect {
-  stroke: #fff;
+  color: #fff;
+}
+
+svg .vector-text {
+  color: #fff;
+}
+
+svg .vector-text.text-player {
+  color: #f00;
+}
+svg .vector-text.text-highscore {
+  color: #0f0;
+}
+svg .vector-text.text-start {
+  color: #00f;
 }
 
 svg .ship {
@@ -67,7 +82,7 @@ svg .ship.playerShip {
 
 svg .asteroid {
   stroke-width: 0.025rem;
-  stroke: #fff;
+  color: #fff;
   fill: transparent;
 }
 
