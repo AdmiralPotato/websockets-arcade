@@ -9,16 +9,19 @@ window.shipComponent = {
     radius: Number,
     color: String,
     isPlayer: Boolean,
-    hit: Boolean
+    hit: Boolean,
+    score: Number
   },
   computed: {
-    transforms: function () {
+    shipTransforms: function () {
       const transforms = [
-        'translate(' + this.x + ', ' + this.y + ')',
         'rotate(' + ((this.angle / window.tau) * 360) + ')',
         'scale(' + this.radius + ')'
       ]
       return transforms.join('')
+    },
+    scoreDisplay: function () {
+      return this.score.toLocaleString()
     }
   },
   template: `
@@ -28,10 +31,18 @@ window.shipComponent = {
           playerShip: isPlayer,
           hit: hit
         }"
-        :transform="transforms"
+        :transform="'translate(' + x + ', ' + y + ')'"
         :style="'color: ' + color + ';'"
       >
-        <polygon points="1,0 -1,-1 -0.5,0 -1,1"/>
+        <vector-text
+          :key="scoreDisplay"
+          :text="scoreDisplay"
+          :scale="0.01"
+          pos="0,-0.07"
+        />
+        <g :transform="shipTransforms">
+          <polygon points="1,0 -1,-1 -0.5,0 -1,1"/>
+        </g>
       </g>
     `
 }

@@ -44,6 +44,7 @@ svg {
   display: block;
   width: 100%;
   height: 100%;
+  color: #fff;
 }
 
 svg * {
@@ -53,12 +54,8 @@ svg * {
   stroke: currentColor;
 }
 
-svg .bounding-rect {
-  color: #fff;
-}
-
 svg .vector-text {
-  color: #fff;
+  fill: transparent;
 }
 
 svg .vector-text.text-player {

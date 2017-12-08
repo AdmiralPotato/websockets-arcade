@@ -14,6 +14,8 @@ const game = {
   asteroidRadiusMin: 1 / 90,
   asteroidRadiusMax: 1 / 15,
   asteroidCount: 0,
+  pointsSplit: 2,
+  pointsCollect: 5,
   state: {
     ships: [],
     asteroids: []
@@ -77,7 +79,7 @@ const game = {
       asteroid.angle += asteroid.rotationSpeed
       game.wrap(asteroid)
       if (asteroid.invincible > 0) {
-        asteroid.invincible --
+        asteroid.invincible -= 1
       } else {
         game.state.ships.forEach(ship => {
           const hit = game.detectCollision(ship, asteroid)
@@ -85,6 +87,9 @@ const game = {
           asteroid.expired = asteroid.expired || hit
           if (asteroid.hit && asteroid.radius / 2 >= game.asteroidRadiusMin) {
             game.splitAsteroid(asteroid)
+            ship.score += game.pointsSplit
+          } else if (asteroid.hit) {
+            ship.score += game.pointsCollect
           }
           ship.hit = ship.hit || hit
         })
@@ -119,7 +124,8 @@ const game = {
       angle: 0,
       radius: game.shipRadius,
       color: `hsla(${Math.random() * 360}, 100%, 50%, 1)`,
-      hit: false
+      hit: false,
+      score: 0
     }
   },
   createAsteroid: (
