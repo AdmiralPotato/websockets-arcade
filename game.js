@@ -19,7 +19,11 @@ const game = {
   asteroidCount: 0,
   pointsSplit: 2,
   pointsCollect: 5,
-  matchDuration: 60 * 2 * 100, // match time = 2:00; ticks are every 10ms
+  durationPlay: 10 * 100, // match play time = 2:00; ticks are every 10ms
+  durationScore: 10 * 100, // Score display time = 10s
+  durationScoreA: 8 * 100, // Score display time = 10s
+  durationScoreB: 6 * 100, // Score display time = 10s
+  durationScoreC: 2 * 100, // Score display time = 10s
   interval: null,
   io: null,
   playerSockets: [],
@@ -31,6 +35,9 @@ const game = {
     ships: [],
     asteroids: []
   },
+  shipStateInitial: [],
+  shipStateA: [],
+  shipStateC: [],
   connectWebSockets: (io) => {
     game.io = io
     game.io.on('connection', function (socket) {
@@ -47,22 +54,17 @@ const game = {
         game.removePlayer(socket)
       })
     })
-    game.start()
+    game.changeModeToIntro()
   },
-  start: () => {
+  changeModeToIntro: () => {
     game.state.mode = 'intro'
-    game.state.timer = game.matchDuration
-    game.state.asteroids = []
+    game.state.timer = game.durationPlay
     game.state.startCircle = {
       x: 0,
       y: 0.8,
       radius: 1 / 8
     }
-    while (game.state.asteroids.length < 10) {
-      game.state.asteroids.push(
-        game.createAsteroid()
-      )
-    }
+    game.populateInitialAsteroids()
     game.playerSockets.forEach(socket => {
       socket.ship.score = 0
     })
@@ -72,37 +74,89 @@ const game = {
       10
     )
   },
+  changeModeToPlay: () => {
+    game.state.mode = 'play'
+    game.state.startCircle = undefined
+    game.populateInitialAsteroids()
+    game.playerSockets.forEach(socket => {
+      socket.ship.score = 0
+    })
+  },
+  changeModeToScore: () => {
+    game.state.mode = 'score'
+    game.state.timer = game.durationScore
+    game.state.asteroids = []
+    let highScore = 0
+    let shipCount = game.state.ships.length
+    let scores = []
+    game.state.ships.forEach((ship, index) => {
+      highScore = Math.max(highScore, ship.score)
+      scores[index] = ship.score
+      ship.score = 0
+    })
+    game.shipStateInitial = JSON.parse(JSON.stringify(game.state.ships))
+    game.shipStateA = JSON.parse(JSON.stringify(game.shipStateInitial))
+    game.shipStateA.forEach((ship, index) => {
+      ship.score = 0
+      ship.x = (((index + 0.5) / shipCount) - 0.5) * (0.8 * 2)
+      ship.y = 0.8
+    })
+    game.shipStateC = JSON.parse(JSON.stringify(game.shipStateA))
+    game.shipStateC.forEach((ship, index) => {
+      ship.score = scores[index]
+      ship.y = 0.8 - ((ship.score / highScore) * 0.8)
+    })
+  },
   tickGame: () => {
     const now = Date.now()
+    if (game.state.mode !== 'score') {
+      game.tickPlayers(now)
+      game.tickAsteroids(now)
+      game.state.asteroids = game.state.asteroids.filter((asteroid) => { return !asteroid.expired })
+    }
     if (game.state.mode === 'intro') {
-      game.startGameOnPlayersGroupingUp()
+      if (game.haveAllPlayersGroupedUp()) {
+        game.changeModeToPlay()
+      }
     }
     if (game.state.mode === 'play') {
       game.state.timer -= 1
+      if (game.state.timer <= 0) {
+        game.changeModeToScore()
+      }
     }
-    game.tickPlayers(now)
-    game.tickAsteroids(now)
-    game.state.asteroids = game.state.asteroids.filter((asteroid) => { return !asteroid.expired })
-    if (game.state.timer <= 0) {
-      game.start()
+    if (game.state.mode === 'score') {
+      game.state.timer -= 1
+      if (game.state.timer <= 0) {
+        game.changeModeToIntro()
+      } else if (game.state.timer >= game.durationScoreA) {
+        let diff = game.state.timer - game.durationScoreA
+        let total = game.durationScore - game.durationScoreA
+        let progress = 1 - (diff / total)
+        game.lerpShips(game.shipStateInitial, game.shipStateA, progress)
+      } else if (game.state.timer >= game.durationScoreB) {
+        // just a pause
+      } else if (game.state.timer >= game.durationScoreC) {
+        let diff = game.state.timer - game.durationScoreC
+        let total = game.durationScoreB - game.durationScoreC
+        let progress = 1 - (diff / total)
+        game.lerpShips(game.shipStateA, game.shipStateC, progress)
+      }
     }
     game.io.emit('state', game.state)
   },
-  startGameOnPlayersGroupingUp: () => {
-    let readyPlayerCount = 0
-    for (let i = 0; i < game.state.ships.length; i++) {
-      let ship = game.state.ships[i]
-      let ready = game.detectCollision(ship, game.state.startCircle)
-      if (ready) {
-        readyPlayerCount += 1
-      } else {
-        break
-      }
-    }
-    if (readyPlayerCount > 0 && readyPlayerCount === game.state.ships.length) {
-      game.state.mode = 'play'
-      game.state.startCircle = undefined
-    }
+  lerpShips: (startState, targetState, progress) => {
+    game.state.ships.forEach((ship, index) => {
+      game.lerpShip(ship, startState[index], targetState[index], progress)
+    })
+  },
+  lerpShip: (target, a, b, progress) => {
+    target.x = game.lerp(a.x, b.x, progress)
+    target.y = game.lerp(a.y, b.y, progress)
+    target.score = Math.floor(game.lerp(a.score, b.score, progress))
+  },
+  lerp: (a, b, progress) => {
+    return a + ((b - a) * progress)
   },
   tickPlayers: (now) => {
     game.playerSockets.forEach(socket => {
@@ -139,6 +193,19 @@ const game = {
     })
     game.generateAsteroids()
   },
+  haveAllPlayersGroupedUp: () => {
+    let readyPlayerCount = 0
+    for (let i = 0; i < game.state.ships.length; i++) {
+      let ship = game.state.ships[i]
+      let ready = game.detectCollision(ship, game.state.startCircle)
+      if (ready) {
+        readyPlayerCount += 1
+      } else {
+        break
+      }
+    }
+    return readyPlayerCount > 0 && readyPlayerCount === game.state.ships.length
+  },
   detectAsteroidCollisions: (asteroid) => {
     game.state.ships.forEach(ship => {
       const hit = game.detectCollision(ship, asteroid)
@@ -154,6 +221,14 @@ const game = {
     })
     if (asteroid.expired && !asteroid.consumable) {
       game.splitAsteroid(asteroid)
+    }
+  },
+  populateInitialAsteroids: () => {
+    game.state.asteroids = []
+    while (game.state.asteroids.length < 10) {
+      game.state.asteroids.push(
+        game.createAsteroid()
+      )
     }
   },
   wrap: (target) => {

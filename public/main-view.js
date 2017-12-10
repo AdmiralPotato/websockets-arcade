@@ -49,7 +49,7 @@ window.mainViewComponent = {
           text="move all ships to red circle to start"
           :scale="0.01"
           pos="0,-0.6" />
-        </g>
+      </g>
       <g
         v-if="mode === 'play'"
         class="mode-play"
@@ -59,6 +59,24 @@ window.mainViewComponent = {
           :text="timerStatus"
           :scale="0.01"
           pos="0,-0.8" />
+      </g>
+      <g
+        v-if="mode === 'score'"
+        class="mode-intro"
+      >
+        <vector-text
+          text="GAME IS NOW OVER"
+          :scale="0.04"
+          pos="0,-0.8" />
+        <vector-text
+          class="text-timer"
+          :text="'Next round in: ' + timerStatus"
+          :scale="0.01"
+          pos="0,-0.5" />
+        <vector-text
+          text="YOU HAVE FAILED MISERABLY"
+          :scale="0.01"
+          pos="0,-0.6" />
       </g>
     </svg>
   `
