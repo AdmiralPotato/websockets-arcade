@@ -69,7 +69,6 @@ svg .vector-text.text-start {
 }
 
 svg .ship {
-  stroke: currentColor;
   fill: transparent;
 }
 
@@ -88,5 +87,5 @@ svg .hit {
 }
 
 svg .asteroid.consumable {
-  stroke: #0f0;
+  color: #0f0;
 }
