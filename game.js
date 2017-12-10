@@ -204,13 +204,18 @@ const game = {
     return volume
   },
   createAsteroid: (
-    x = (Math.random() - 0.5) * 2,
-    y = (Math.random() - 0.5) * 2,
+    x = null,
+    y = null,
     radius = Math.max(game.asteroidRadiusMax * Math.random(), game.asteroidRadiusMin)
   ) => {
     const angle = Math.random() * tau
     const speed = Math.min((1 / 800), Math.random() * (1 / 600))
     const id = game.asteroidCount += 1
+    if (x === null || y === null) {
+      const edgePostion = game.randomEdgePosition()
+      x = edgePostion.x
+      y = edgePostion.y
+    }
     return {
       id,
       x,
@@ -223,6 +228,17 @@ const game = {
       invincible: 100,
       consumable: radius <= game.asteroidRadiusConsumable
     }
+  },
+  randomEdgePosition: () => {
+    const angle = Math.random() * tau
+    const radius = 2
+    return {
+      x: game.bound(-1, 1, Math.cos(angle) * radius),
+      y: game.bound(-1, 1, Math.sin(angle) * radius)
+    }
+  },
+  bound: (min, max, value) => {
+    return Math.min(max, Math.max(min, value))
   },
   splitAsteroid: (asteroid) => {
     const x = asteroid.x
