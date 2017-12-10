@@ -49,6 +49,7 @@ svg {
 
 svg * {
   stroke-linejoin: round;
+  stroke-linecap: round;
   vector-effect: non-scaling-stroke;
   stroke-width: 0.25vmin;
   stroke: currentColor;
