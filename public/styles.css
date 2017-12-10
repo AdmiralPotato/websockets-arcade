@@ -58,14 +58,8 @@ svg .vector-text {
   fill: transparent;
 }
 
-svg .vector-text.text-player {
+svg .vector-text.text-timer {
   color: #f00;
-}
-svg .vector-text.text-highscore {
-  color: #0f0;
-}
-svg .vector-text.text-start {
-  color: #00f;
 }
 
 svg .ship {

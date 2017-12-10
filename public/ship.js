@@ -35,7 +35,6 @@ window.shipComponent = {
         :style="'color: ' + color + ';'"
       >
         <vector-text
-          :key="scoreDisplay"
           :text="scoreDisplay"
           :scale="0.01"
           pos="0,-0.07"

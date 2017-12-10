@@ -7,7 +7,6 @@ const arrayRemove = function (array, item) {
   return array
 }
 const game = {
-  playerSockets: [],
   drag: 0.955,
   topSpeed: 1 / 80,
   shipRadius: 1 / 40,
@@ -19,12 +18,18 @@ const game = {
   asteroidCount: 0,
   pointsSplit: 2,
   pointsCollect: 5,
+  matchDuration: 60 * 2 * 100, // match time = 2:00; ticks are every 10ms
+  interval: null,
+  io: null,
+  playerSockets: [],
   state: {
+    timer: 0,
     ships: [],
     asteroids: []
   },
   connectWebSockets: (io) => {
-    io.on('connection', function (socket) {
+    game.io = io
+    game.io.on('connection', function (socket) {
       game.addPlayer(socket)
       socket.force = 0
       socket.onTime = null
@@ -38,21 +43,35 @@ const game = {
         game.removePlayer(socket)
       })
     })
+    game.start()
+  },
+  start: () => {
+    game.state.timer = game.matchDuration
+    game.state.asteroids = []
     while (game.state.asteroids.length < 10) {
       game.state.asteroids.push(
         game.createAsteroid()
       )
     }
-    setInterval(
-      () => {
-        const now = Date.now()
-        game.tickPlayers(now)
-        game.tickAsteroids(now)
-        game.state.asteroids = game.state.asteroids.filter((asteroid) => { return !asteroid.expired })
-        io.emit('state', game.state)
-      },
+    game.playerSockets.forEach(socket => {
+      socket.ship.score = 0
+    })
+    clearInterval(game.interval)
+    game.interval = setInterval(
+      game.tickGame,
       10
     )
+  },
+  tickGame: () => {
+    const now = Date.now()
+    game.state.timer -= 1
+    game.tickPlayers(now)
+    game.tickAsteroids(now)
+    game.state.asteroids = game.state.asteroids.filter((asteroid) => { return !asteroid.expired })
+    if (game.state.timer <= 0) {
+      game.start()
+    }
+    game.io.emit('state', game.state)
   },
   tickPlayers: (now) => {
     game.playerSockets.forEach(socket => {

@@ -66,7 +66,8 @@ window.vectorTextComponent = {
   },
   data: function () {
     return {
-      characters: []
+      characters: [],
+      cachedState: ''
     }
   },
   created: function () {
@@ -75,11 +76,25 @@ window.vectorTextComponent = {
     this.characterHeightOffset = 2 // This is set static because of the design of the font.
     this.cacheTextGeom()
   },
-  methods: {
-    getStateString: function () {
+  computed: {
+    stateString: function () {
       const t = this
-      return (t.text + t.textAlign + t.characterWidth + t.letterSpacing + t.lineHeight + t.fontSize).toString()
-    },
+      return [
+        t.text,
+        t.textAlign,
+        t.characterWidth,
+        t.letterSpacing,
+        t.lineHeight,
+        t.fontSize
+      ].join('-')
+    }
+  },
+  beforeUpdate: function () {
+    if (this.cachedState !== this.stateString) {
+      this.cacheTextGeom()
+    }
+  },
+  methods: {
     cacheTextGeom: function () {
       const t = this
       const textAlignTypes = {
@@ -137,11 +152,15 @@ window.vectorTextComponent = {
         })
       }
 
-      t.stringCached = t.getStateString()
+      t.cachedState = t.stateString
     }
   },
   template: `
-    <g class="vector-text" :transform="'translate('+ pos +'),scale('+ scale +')'">
+    <g
+      class="vector-text"
+      :transform="'translate('+ pos +'),scale('+ scale +')'"
+      :data-state="stateString + ';' + cachedState"
+    >
       <use
         v-for="(item,index) in characters"
         :key="'ch-' + item.char + '-' + index"

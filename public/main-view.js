@@ -1,8 +1,14 @@
 window.mainViewComponent = {
   props: {
     playerId: String,
+    timer: Number,
     ships: Array,
     asteroids: Array
+  },
+  computed: {
+    timerStatus: function () {
+      return (new Date(0, 0, 0, 0, 0, ((this.timer || 0) / 100))).toTimeString().split(/( 00:| )/)[0].slice(3)
+    }
   },
   template: `
     <svg viewBox="-1 -1 2 2">
@@ -10,23 +16,11 @@ window.mainViewComponent = {
       <vector-text-defs />
       <g class="text-overlay">
         <vector-text
-          class="text-start"
-          text="INSERT COIN\nno don't actually\nit's your phone just touch start or something"
+          class="text-timer"
+          :text="timerStatus"
           :scale="0.01"
-          pos="0,0"
-          textAlign="center"/>
-        <vector-text
-          class="text-player"
-          text="PLAYER: Bob The Destroyer\nScore: 10,000"
-          :scale="0.01"
-          pos="-0.8,-0.8"
-          textAlign="left" />
-        <vector-text
-          class="text-highscore"
-          text="High Score: 100,009,001\nHeld by: JANE\n'YOLO!@#$%^&*()-=_+{}<>?/\\:;'"
-          :scale="0.01"
-          pos="0.8,-0.8"
-          textAlign="right" />
+          pos="0,-0.8"
+          textAlign="center" />
       </g>
       <g class="ships">
         <ship
