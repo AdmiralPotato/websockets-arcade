@@ -19,13 +19,29 @@ window.asteroidComponent = {
       return transforms.join('')
     }
   },
+  data: function () {
+    const points = []
+    const segments = 10 + Math.round(Math.random() * 5)
+    for(let i = 0; i < segments; i++) {
+      const angle = (i / segments) * window.tau
+      const radius = 0.75 + (Math.random() * 0.5)
+      const point = [
+        Math.cos(angle) * radius,
+        Math.sin(angle) * radius
+      ]
+      points.push(point.join(','))
+    }
+    return {
+      points: points.join(' ')
+    }
+  },
   template: `
       <g
         class="asteroid"
         :class="{hit: invincible, consumable: radius <= 1/45}"
         :transform="transforms"
       >
-        <polygon points="1,0 -1,0 -1,-1 1,1 -0.5,0 -1,1"/>
+        <polygon :points="points"/>
       </g>
     `
 }
