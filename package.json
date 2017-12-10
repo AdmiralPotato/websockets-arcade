@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon --inspect ./index.js",
     "test": "standard"
   },
   "eslintConfig": {
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "eslint-config-standard": "^10.2.1",
+    "nodemon": "^1.12.5",
     "standard": "^10.0.3"
   }
 }
