@@ -12,6 +12,7 @@ const game = {
   shipRadius: 1 / 40,
   asteroidRadiusMin: 1 / 100,
   asteroidRadiusMax: 1 / 10,
+  asteroidRadiusConsumable: 1 / 50,
   asteroidVolumeMax: 0.5,
   asteroidCooldownDefault: 25,
   asteroidCooldown: 25,
@@ -103,21 +104,27 @@ const game = {
       if (asteroid.invincible > 0) {
         asteroid.invincible -= 1
       } else {
-        game.state.ships.forEach(ship => {
-          const hit = game.detectCollision(ship, asteroid)
-          asteroid.hit = asteroid.hit || hit
-          asteroid.expired = asteroid.expired || hit
-          if (asteroid.hit && asteroid.radius / 2 >= game.asteroidRadiusMin) {
-            game.splitAsteroid(asteroid)
-            ship.score += game.pointsSplit
-          } else if (asteroid.hit) {
-            ship.score += game.pointsCollect
-          }
-          ship.hit = ship.hit || hit
-        })
+        game.detectAsteroidCollisions(asteroid)
       }
     })
     game.generateAsteroids()
+  },
+  detectAsteroidCollisions: (asteroid) => {
+    game.state.ships.forEach(ship => {
+      const hit = game.detectCollision(ship, asteroid)
+      if (hit) {
+        ship.hit = ship.hit || hit
+        asteroid.expired = asteroid.expired || hit
+        if (asteroid.consumable) {
+          ship.score += game.pointsCollect
+        } else {
+          ship.score += game.pointsSplit
+        }
+      }
+    })
+    if (asteroid.expired && !asteroid.consumable) {
+      game.splitAsteroid(asteroid)
+    }
   },
   wrap: (target) => {
     target.x = Math.abs(target.x) > 1 ? -1 * Math.sign(target.x) : target.x
@@ -183,9 +190,8 @@ const game = {
       rotationSpeed: speed * Math.sign(Math.random() - 0.5),
       radius,
       angle,
-      hit: false,
-      expired: false,
-      invincible: 100
+      invincible: 100,
+      consumable: radius <= game.asteroidRadiusConsumable
     }
   },
   splitAsteroid: (asteroid) => {

@@ -7,7 +7,8 @@ window.asteroidComponent = {
     y: Number,
     angle: Number,
     radius: Number,
-    invincible: Number
+    invincible: Number,
+    consumable: Boolean
   },
   computed: {
     transforms: function () {
@@ -38,7 +39,7 @@ window.asteroidComponent = {
   template: `
       <g
         class="asteroid"
-        :class="{hit: invincible, consumable: radius <= 1/45}"
+        :class="{hit: invincible, consumable}"
         :transform="transforms"
       >
         <polygon :points="points"/>
