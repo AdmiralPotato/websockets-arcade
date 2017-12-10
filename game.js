@@ -12,7 +12,10 @@ const game = {
   topSpeed: 1 / 80,
   shipRadius: 1 / 40,
   asteroidRadiusMin: 1 / 90,
-  asteroidRadiusMax: 1 / 15,
+  asteroidRadiusMax: 1 / 9,
+  asteroidVolumeMax: 0.5,
+  asteroidCooldownDefault: 25,  
+  asteroidCooldown: 25,  
   asteroidCount: 0,
   pointsSplit: 2,
   pointsCollect: 5,
@@ -95,6 +98,7 @@ const game = {
         })
       }
     })
+    game.generateAsteroids()
   },
   wrap: (target) => {
     target.x = Math.abs(target.x) > 1 ? -1 * Math.sign(target.x) : target.x
@@ -128,6 +132,21 @@ const game = {
       score: 0
     }
   },
+  generateAsteroids: () => {
+    if (game.currentAsteroidVolume() < game.asteroidVolumeMax && game.asteroidCooldown<=0) {
+      game.state.asteroids.push(game.createAsteroid())
+      game.asteroidCooldown = game.asteroidCooldownDefault
+    } else {
+      game.asteroidCooldown -= 1
+   }
+  },
+  currentAsteroidVolume: () => {
+    volume = 0
+    game.state.asteroids.forEach(asteroid => {
+      volume += asteroid.radius
+    })
+    return volume
+  },
   createAsteroid: (
     x = (Math.random() - 0.5) * 2,
     y = (Math.random() - 0.5) * 2,
@@ -136,7 +155,7 @@ const game = {
     const angle = Math.random() * tau
     const speed = Math.min((1 / 800), Math.random() * (1 / 600))
     return {
-      id: game.asteroidCount++,
+      id: game.asteroidCount += 1,
       x: x,
       y: y,
       xVel: Math.cos(angle) * speed,
