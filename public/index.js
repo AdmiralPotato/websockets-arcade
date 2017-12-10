@@ -34,6 +34,11 @@ socket.on('players', function (data) {
 })
 
 socket.on('state', function (data) {
+  const lastStart = window.app.lastServerState.serverStart
+  if (lastStart && lastStart !== data.serverStart) {
+    socket.close()
+    window.location.reload(true)
+  }
   window.app.lastServerState = data
 })
 

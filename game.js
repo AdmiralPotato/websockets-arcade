@@ -24,6 +24,7 @@ const game = {
   io: null,
   playerSockets: [],
   state: {
+    serverStart: Date.now(),
     timer: 0,
     ships: [],
     asteroids: []
