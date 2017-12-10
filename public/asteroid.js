@@ -22,7 +22,7 @@ window.asteroidComponent = {
   data: function () {
     const points = []
     const segments = 10 + Math.round(Math.random() * 5)
-    for(let i = 0; i < segments; i++) {
+    for (let i = 0; i < segments; i++) {
       const angle = (i / segments) * window.tau
       const radius = 0.75 + (Math.random() * 0.5)
       const point = [
