@@ -25,6 +25,8 @@ const game = {
   playerSockets: [],
   state: {
     serverStart: Date.now(),
+    mode: 'intro',
+    startCircle: null,
     timer: 0,
     ships: [],
     asteroids: []
@@ -48,8 +50,14 @@ const game = {
     game.start()
   },
   start: () => {
+    game.state.mode = 'intro'
     game.state.timer = game.matchDuration
     game.state.asteroids = []
+    game.state.startCircle = {
+      x: 0,
+      y: 0.8,
+      radius: 1 / 8
+    }
     while (game.state.asteroids.length < 10) {
       game.state.asteroids.push(
         game.createAsteroid()
@@ -66,7 +74,12 @@ const game = {
   },
   tickGame: () => {
     const now = Date.now()
-    game.state.timer -= 1
+    if (game.state.mode === 'intro') {
+      game.startGameOnPlayersGroupingUp()
+    }
+    if (game.state.mode === 'play') {
+      game.state.timer -= 1
+    }
     game.tickPlayers(now)
     game.tickAsteroids(now)
     game.state.asteroids = game.state.asteroids.filter((asteroid) => { return !asteroid.expired })
@@ -74,6 +87,22 @@ const game = {
       game.start()
     }
     game.io.emit('state', game.state)
+  },
+  startGameOnPlayersGroupingUp: () => {
+    let readyPlayerCount = 0
+    for (let i = 0; i < game.state.ships.length; i++) {
+      let ship = game.state.ships[i]
+      let ready = game.detectCollision(ship, game.state.startCircle)
+      if (ready) {
+        readyPlayerCount += 1
+      } else {
+        break
+      }
+    }
+    if (readyPlayerCount > 0 && readyPlayerCount === game.state.ships.length) {
+      game.state.mode = 'play'
+      game.state.startCircle = undefined
+    }
   },
   tickPlayers: (now) => {
     game.playerSockets.forEach(socket => {
