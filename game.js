@@ -143,7 +143,24 @@ const game = {
         game.lerpShips(game.shipStateA, game.shipStateC, progress)
       }
     }
-    game.io.emit('state', game.state)
+    const filteredGameState = game.filterStateDataForClientSide()
+    game.io.emit('state', filteredGameState)
+  },
+  filterProps: [
+    'xVel',
+    'yVel',
+    'rotationSpeed'
+  ],
+  filterStateDataForClientSide: () => {
+    const result = JSON.parse(JSON.stringify(game.state, (key, value) => {
+      if (game.filterProps.includes(key)) {
+        value = undefined
+      } else if (key !== 'serverStart' && typeof value === 'number') {
+        value = parseFloat(value.toFixed(5))
+      }
+      return value
+    }))
+    return result
   },
   lerpShips: (startState, targetState, progress) => {
     game.state.ships.forEach((ship, index) => {
@@ -258,7 +275,7 @@ const game = {
       yVel: 0,
       angle: 0,
       radius: game.shipRadius,
-      color: `hsla(${Math.random() * 360}, 100%, 50%, 1)`,
+      hue: Math.floor(Math.random() * 360),
       hit: false,
       score: 0
     }

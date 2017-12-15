@@ -7,7 +7,7 @@ window.shipComponent = {
     y: Number,
     angle: Number,
     radius: Number,
-    color: String,
+    hue: Number,
     isPlayer: Boolean,
     hit: Boolean,
     score: Number
@@ -32,7 +32,7 @@ window.shipComponent = {
           hit: hit
         }"
         :transform="'translate(' + x + ', ' + y + ')'"
-        :style="'color: ' + color + ';'"
+        :style="'color: hsla(' + hue + ', 100%, 50%, 1);'"
       >
         <vector-text
           :text="scoreDisplay"
