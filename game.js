@@ -41,9 +41,12 @@ const game = {
   connectWebSockets: (io) => {
     game.io = io
     game.io.on('connection', function (socket) {
-      game.addPlayer(socket)
       socket.force = 0
       socket.onTime = null
+      socket.on('playerConnect', function (playerConnectData) {
+        game.addPlayer(socket, playerConnectData.hue)
+        socket.emit('playerConnect')
+      })
       socket.on('change', function (moveData) {
         game.controlChange(socket, moveData)
       })
@@ -258,13 +261,13 @@ const game = {
     const distance = Math.sqrt((diffX * diffX) + (diffY * diffY))
     return distance < a.radius + b.radius
   },
-  addPlayer: (socket) => {
-    socket.ship = game.createShip(socket)
+  addPlayer: (socket, hue) => {
+    socket.ship = game.createShip(socket, hue)
     game.playerSockets.push(socket)
     game.state.ships.push(socket.ship)
     game.reportPlayerCount(socket)
   },
-  createShip: (socket) => {
+  createShip: (socket, hue) => {
     const radius = 0.5
     const angle = Math.random() * Math.PI * 2
     return {
@@ -275,7 +278,7 @@ const game = {
       yVel: 0,
       angle: 0,
       radius: game.shipRadius,
-      hue: Math.floor(Math.random() * 360),
+      hue: hue,
       hit: false,
       score: 0
     }

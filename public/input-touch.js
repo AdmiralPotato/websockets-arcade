@@ -10,9 +10,8 @@ const joystickOptions = {
   restOpacity: 0.125
 }
 
-const touchInput = window.nipplejs.create(joystickOptions)
-
 window.attachTouchInputToSocket = (socket) => {
+  const touchInput = window.nipplejs.create(joystickOptions)
   touchInput.on('move', (allJoystickValues, currentJoystickValues) => {
     socket.emit(
       'change',

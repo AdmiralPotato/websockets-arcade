@@ -40,7 +40,7 @@ window.shipComponent = {
           pos="0,-0.07"
         />
         <g :transform="shipTransforms">
-          <polygon points="1,0 -1,-1 -0.5,0 -1,1"/>
+          <use xlink:href="#ship" />
         </g>
       </g>
     `
