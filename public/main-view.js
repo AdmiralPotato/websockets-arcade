@@ -1,6 +1,6 @@
 window.mainViewComponent = {
   props: {
-    playerId: String,
+    localPlayers: Object,
     showColorPicker: Boolean,
     mode: String,
     startCircle: Object,
@@ -11,6 +11,17 @@ window.mainViewComponent = {
   computed: {
     timerStatus: function () {
       return (new Date(0, 0, 0, 0, 0, ((this.timer || 0) / 100))).toTimeString().split(/( 00:| )/)[0].slice(3)
+    },
+    localPlayerIds: function () {
+      return Object.values(this.localPlayers).map((player) => { return player.id })
+    },
+    localPlayersThatNeedToPickColor: function () {
+      return Object.values(this.localPlayers).filter((player) => { return !player.connected })
+    }
+  },
+  methods: {
+    isLocalPlayer: function (ship) {
+      return this.localPlayerIds.includes(ship.id)
     }
   },
   template: `
@@ -19,10 +30,10 @@ window.mainViewComponent = {
       <vector-text-defs />
       <defs>
         <polygon id="ship" points="1,0 -1,-1 -0.5,0 -1,1"/>
-        <path 
-          id="petal" 
-          transform="translate(-1,-1)" 
-          d="M2,1a1.01269,1.01269,0,0,1-.00516.10224.99969.99969,0,0,1-.01516.09929l-.00935.04123a.0535.0535,0,0,1-.06776.03827L1.526,1.16377a.0537.0537,0,0,1-.03622-.06251l.0001-.00049a.50384.50384,0,0,0,0-.20154L1.48974.89874A.0537.0537,0,0,1,1.526.83623L1.90257.719a.0535.0535,0,0,1,.06776.03827l.00935.04123a.99969.99969,0,0,1,.01516.09929A1.01269,1.01269,0,0,1,2,1Z"
+        <path
+          id="petal"
+          transform="translate(-1,-1)"
+          d="M2,1A1.01269,1.01269,0,0,0,1.99484.89776.99969.99969,0,0,0,1.97968.79847L1.97033.75724A.0535.0535,0,0,0,1.90257.719L1.526.83623a.0537.0537,0,0,0-.03622.06251c0,.00017.006.03333.00768.05014a.50773.50773,0,0,1,0,.10224c-.00171.01681-.00764.05-.00768.05014a.0537.0537,0,0,0,.03622.06251l.37661.11726a.0535.0535,0,0,0,.06776-.03827l.00935-.04123a.99969.99969,0,0,0,.01516-.09929A1.01269,1.01269,0,0,0,2,1Z"
         />
       </defs>
       <g class="asteroids">
@@ -36,7 +47,7 @@ window.mainViewComponent = {
         <ship
           v-for="ship in ships"
           v-bind="ship"
-          :isPlayer="ship.id === playerId"
+          :isPlayer="isLocalPlayer(ship)"
           :key="ship.id"
         />
       </g>
@@ -87,11 +98,18 @@ window.mainViewComponent = {
           :scale="0.01"
           pos="0,-0.6" />
       </g>
-      <g 
-        v-if="showColorPicker"
+      <g
+        v-if="localPlayersThatNeedToPickColor.length"
         class="color-pickers"
       >
-        <color-picker @selectColor="$emit('selectColor', $event)"/>
+        <color-picker
+          v-for="(localPlayer, index) in localPlayersThatNeedToPickColor"
+          :total="localPlayersThatNeedToPickColor.length"
+          :key="localPlayer.id"
+          :index="index"
+          :localPlayer="localPlayer"
+          @selectColor="$emit('selectColor', $event)"
+        />
       </g>
     </svg>
   `

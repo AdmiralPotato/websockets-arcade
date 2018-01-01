@@ -8,9 +8,10 @@ const gamepadSampler = {
     Object.entries(gamepads).forEach(([index, gamepad]) => {
       if (gamepad && gamepad.mapping === 'standard') {
         gamepadsSampled += 1
-        const lastSample = gamepadSampler.controllers[gamepad.index]
+        const id = 'gamepad-' + gamepad.index + '-' + gamepad.id
+        const lastSample = gamepadSampler.controllers[id]
         const currentSample = {
-          index: gamepad.index,
+          id: id,
           axes: gamepad.axes,
           buttons: gamepad.buttons.map((buttons) => { return buttons.value })
         }
@@ -18,7 +19,7 @@ const gamepadSampler = {
         if (!lastSample || currentSample.string !== lastSample.string) {
           gamepadEvents.fire('change', currentSample)
         }
-        gamepadSampler.controllers[gamepad.index] = currentSample
+        gamepadSampler.controllers[id] = currentSample
       }
     })
     setTimeout(
@@ -39,12 +40,10 @@ const gamepadSampler = {
 }
 
 const gamepadEvents = {
-  state: {
-    x: 0,
-    y: 0
-  },
+  controllers: {},
   listenerMap: {
     change: [],
+    start: [],
     move: [],
     end: []
   },
@@ -53,44 +52,89 @@ const gamepadEvents = {
   },
   addEventListener (eventName, listener) {
     gamepadEvents.listenerMap[eventName].push(listener)
+  },
+  removeEventListener (eventName, outgoingListener) {
+    gamepadEvents.listenerMap[eventName] = gamepadEvents.listenerMap[eventName].filter((listener) => {
+      return listener !== outgoingListener
+    })
   }
 }
 
 const deadzone = 0.001
 gamepadEvents.addEventListener('change', (event) => {
+  const controller = gamepadEvents.controllers[event.id] = gamepadEvents.controllers[event.id] || {
+    id: event.id,
+    x: 0,
+    y: 0,
+    start: false
+  }
   let centered = (
     Math.abs(event.axes[0]) < deadzone &&
     Math.abs(event.axes[1]) < deadzone
   )
   if (
-    gamepadEvents.state.x !== event.axes[0] ||
-    gamepadEvents.state.y !== event.axes[1]
+    controller.x !== event.axes[0] ||
+    controller.y !== event.axes[1]
   ) {
-    gamepadEvents.state.x = event.axes[0]
-    gamepadEvents.state.y = event.axes[1]
+    controller.x = event.axes[0]
+    controller.y = event.axes[1]
     if (centered) {
-      gamepadEvents.fire('end')
+      gamepadEvents.fire('end', controller)
     } else {
-      gamepadEvents.fire('move', gamepadEvents.state)
+      gamepadEvents.fire('move', controller)
     }
   }
+  if (!controller.start && event.buttons[9]) {
+    controller.start = true
+    gamepadEvents.fire('start', controller)
+  }
+  controller.start = event.buttons[9]
 })
 
-window.attachGamepadInputToSocket = (socket) => {
-  gamepadSampler.init()
+gamepadSampler.init()
 
-  gamepadEvents.addEventListener('move', (moveEvent) => {
-    const distance = Math.sqrt((moveEvent.x * moveEvent.x) + (moveEvent.y * moveEvent.y))
-    socket.emit(
-      'change',
-      {
-        force: Math.min(1, distance * distance),
-        angle: Math.atan2(-moveEvent.y, moveEvent.x)
-      }
-    )
-  })
+const tau = Math.PI * 2
+const deg = tau / 360
+window.attachGamepadInputToPlayer = (socket, player) => {
+  const startListener = (event) => {
+    if (event.id !== player.controller) { return }
+    if (!player.connected) {
+      window.app.connectPlayer(player)
+    } else {
+      disconnectGamepad()
+      window.app.disconnectPlayer(player)
+    }
+  }
+  const moveListener = (event) => {
+    if (event.id !== player.controller) { return }
+    let angle = Math.atan2(-event.y, event.x)
+    if (!player.connected) {
+      window.Vue.set(player, 'angle', ((-angle + tau) % tau) / deg)
+    } else {
+      const distance = Math.sqrt((event.x * event.x) + (event.y * event.y))
+      socket.emit(
+        'change',
+        {
+          id: player.id,
+          force: Math.min(1, distance * distance),
+          angle: angle
+        }
+      )
+    }
+  }
+  const endListener = (event) => {
+    if (event.id !== player.controller || !player.connected) { return }
+    socket.emit('release', {id: player.id})
+  }
+  const disconnectGamepad = function () {
+    gamepadEvents.removeEventListener('start', startListener)
+    gamepadEvents.removeEventListener('move', moveListener)
+    gamepadEvents.removeEventListener('end', endListener)
+  }
 
-  gamepadEvents.addEventListener('end', () => {
-    socket.emit('release')
-  })
+  gamepadEvents.addEventListener('start', startListener)
+  gamepadEvents.addEventListener('move', moveListener)
+  gamepadEvents.addEventListener('end', endListener)
 }
+
+window.gamepadEvents = gamepadEvents

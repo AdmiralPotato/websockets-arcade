@@ -19,14 +19,14 @@ const game = {
   asteroidCount: 0,
   pointsSplit: 2,
   pointsCollect: 5,
-  durationPlay: 10 * 100, // match play time = 2:00; ticks are every 10ms
+  durationPlay: 30 * 100, // match play time = 2:00; ticks are every 10ms
   durationScore: 10 * 100, // Score display time = 10s
   durationScoreA: 8 * 100, // Score display time = 10s
   durationScoreB: 6 * 100, // Score display time = 10s
   durationScoreC: 2 * 100, // Score display time = 10s
   interval: null,
   io: null,
-  playerSockets: [],
+  players: {},
   state: {
     serverStart: Date.now(),
     mode: 'intro',
@@ -41,20 +41,23 @@ const game = {
   connectWebSockets: (io) => {
     game.io = io
     game.io.on('connection', function (socket) {
-      socket.force = 0
-      socket.onTime = null
-      socket.on('playerConnect', function (playerConnectData) {
-        game.addPlayer(socket, playerConnectData.hue)
-        socket.emit('playerConnect')
+      socket.players = {}
+      socket.on('connectPlayer', function (player) {
+        game.addPlayer(socket, player)
       })
       socket.on('change', function (moveData) {
         game.controlChange(socket, moveData)
       })
-      socket.on('release', function () {
-        game.controlRelease(socket)
+      socket.on('release', function (releaseData) {
+        game.controlRelease(socket, releaseData)
+      })
+      socket.on('disconnectPlayer', function (disconnectPlayerData) {
+        game.removePlayer(socket, disconnectPlayerData)
       })
       socket.on('disconnect', function () {
-        game.removePlayer(socket)
+        Object.values(socket.players).forEach((player) => {
+          game.removePlayer(socket, player)
+        })
       })
     })
     game.changeModeToIntro()
@@ -68,8 +71,8 @@ const game = {
       radius: 1 / 8
     }
     game.populateInitialAsteroids()
-    game.playerSockets.forEach(socket => {
-      socket.ship.score = 0
+    game.state.ships.forEach(ship => {
+      ship.score = 0
     })
     clearInterval(game.interval)
     game.interval = setInterval(
@@ -81,8 +84,8 @@ const game = {
     game.state.mode = 'play'
     game.state.startCircle = undefined
     game.populateInitialAsteroids()
-    game.playerSockets.forEach(socket => {
-      socket.ship.score = 0
+    game.state.ships.forEach(ship => {
+      ship.score = 0
     })
   },
   changeModeToScore: () => {
@@ -167,7 +170,11 @@ const game = {
   },
   lerpShips: (startState, targetState, progress) => {
     game.state.ships.forEach((ship, index) => {
-      game.lerpShip(ship, startState[index], targetState[index], progress)
+      const a = startState[index]
+      const b = targetState[index]
+      if (a !== undefined && b !== undefined) {
+        game.lerpShip(ship, a, b, progress)
+      }
     })
   },
   lerpShip: (target, a, b, progress) => {
@@ -179,17 +186,17 @@ const game = {
     return a + ((b - a) * progress)
   },
   tickPlayers: (now) => {
-    game.playerSockets.forEach(socket => {
-      let ship = socket.ship
+    game.state.ships.forEach(ship => {
+      let player = game.players[ship.id]
       ship.x += ship.xVel
       ship.y += ship.yVel
       game.wrap(ship)
 
-      if (socket.onTime !== null) {
-        const timeDiff = now - socket.onTime
+      if (player.onTime !== null) {
+        const timeDiff = now - player.onTime
         const accelerationRampUp = Math.min(1, timeDiff / 1000)
-        ship.xVel = Math.cos(ship.angle) * socket.force * accelerationRampUp * game.topSpeed
-        ship.yVel = Math.sin(ship.angle) * socket.force * accelerationRampUp * game.topSpeed
+        ship.xVel = Math.cos(ship.angle) * player.force * accelerationRampUp * game.topSpeed
+        ship.yVel = Math.sin(ship.angle) * player.force * accelerationRampUp * game.topSpeed
       } else {
         ship.xVel *= game.drag
         ship.yVel *= game.drag
@@ -252,8 +259,8 @@ const game = {
     }
   },
   wrap: (target) => {
-    target.x = Math.abs(target.x) > 1 ? -1 * Math.sign(target.x) : target.x
-    target.y = Math.abs(target.y) > 1 ? -1 * Math.sign(target.y) : target.y
+    target.x = (Math.abs(target.x) > 1 ? -1 * Math.sign(target.x) : target.x) || 0
+    target.y = (Math.abs(target.y) > 1 ? -1 * Math.sign(target.y) : target.y) || 0
   },
   detectCollision: (a, b) => {
     const diffX = a.x - b.x
@@ -261,24 +268,33 @@ const game = {
     const distance = Math.sqrt((diffX * diffX) + (diffY * diffY))
     return distance < a.radius + b.radius
   },
-  addPlayer: (socket, hue) => {
-    socket.ship = game.createShip(socket, hue)
-    game.playerSockets.push(socket)
-    game.state.ships.push(socket.ship)
-    game.reportPlayerCount(socket)
+  addPlayer: (socket, player) => {
+    if (!game.players[player.id]) {
+      player.force = 0
+      player.onTime = null
+      player.ship = game.createShip(player)
+      socket.players[player.id] = player
+      game.players[player.id] = player
+      game.state.ships.push(player.ship)
+      socket.emit('connectPlayer', player.id)
+      game.reportPlayerCount(game.io)
+      console.log(`Connecting player:${player.id} to socket:${socket.id}`)
+    } else {
+      console.error('Cheating! Someone is trying to become another connected player!')
+    }
   },
-  createShip: (socket, hue) => {
+  createShip: (player) => {
     const radius = 0.5
     const angle = Math.random() * Math.PI * 2
     return {
-      id: socket.id,
+      id: player.id,
       x: Math.cos(angle) * radius,
       y: Math.sin(angle) * radius,
       xVel: 0,
       yVel: 0,
       angle: 0,
       radius: game.shipRadius,
-      hue: hue,
+      hue: player.hue,
       hit: false,
       score: 0
     }
@@ -344,25 +360,42 @@ const game = {
       game.createAsteroid(x, y, radius)
     )
   },
-  removePlayer: (socket) => {
-    arrayRemove(game.playerSockets, socket)
-    arrayRemove(game.state.ships, socket.ship)
-    game.reportPlayerCount(socket)
+  removePlayer: (socket, disconnectPlayerData) => {
+    const player = socket.players[disconnectPlayerData.id]
+    if (player) {
+      delete socket.players[player.id]
+      delete game.players[player.id]
+      arrayRemove(game.state.ships, player.ship)
+      game.reportPlayerCount()
+    } else {
+      console.error('Cheating! Someone is trying to disconnect a player that is not on their socket!')
+    }
   },
   controlChange: (socket, moveData) => {
-    if (!socket.onTime) {
-      socket.onTime = Date.now()
+    const player = socket.players[moveData.id]
+    if (player) {
+      if (!player.onTime) {
+        player.onTime = Date.now()
+      }
+      player.force = Math.min(1, moveData.force)
+      player.ship.angle = (moveData.angle !== undefined ? -moveData.angle : player.ship.angle)
+    } else {
+      console.error('Cheating! Someone is trying to control a ship that is not on their socket!')
     }
-    socket.force = Math.min(1, moveData.force)
-    socket.ship.angle = moveData.angle !== undefined ? -moveData.angle : socket.ship.angle
   },
-  controlRelease: (socket) => {
-    socket.onTime = null
+  controlRelease: (socket, releaseData) => {
+    const player = socket.players[releaseData.id]
+    if (player) {
+      player.onTime = null
+    } else {
+      console.error('Cheating! Someone is trying to stop a ship that is not on their socket!')
+    }
   },
-  reportPlayerCount: (socket) => {
-    console.log('Connected players:', game.playerSockets.length)
-    socket.server.emit('players', game.playerSockets.length)
-    socket.server.emit('state', game.state)
+  reportPlayerCount: () => {
+    const connectedPlayers = Object.values(game.players).length
+    console.log('Connected players:', connectedPlayers)
+    game.io.emit('players', connectedPlayers)
+    game.io.emit('state', game.state)
   }
 }
 

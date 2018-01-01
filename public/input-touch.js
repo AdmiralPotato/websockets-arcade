@@ -10,12 +10,13 @@ const joystickOptions = {
   restOpacity: 0.125
 }
 
-window.attachTouchInputToSocket = (socket) => {
+window.attachTouchInputToPlayer = (socket, player) => {
   const touchInput = window.nipplejs.create(joystickOptions)
   touchInput.on('move', (allJoystickValues, currentJoystickValues) => {
     socket.emit(
       'change',
       {
+        id: player.id,
         force: currentJoystickValues.force,
         angle: currentJoystickValues.angle.radian
       }
@@ -23,6 +24,6 @@ window.attachTouchInputToSocket = (socket) => {
   })
 
   touchInput.on('end', () => {
-    socket.emit('release')
+    socket.emit('release', {id: player.id})
   })
 }
