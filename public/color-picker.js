@@ -85,11 +85,10 @@ window.colorPickerComponent = {
           class="ship playerShip"
           :transform="'scale(0.1) rotate(' + (localPlayer.angle || angle) + ')'"
           :style="getColorStyle(selectedHue)"
+          @click="selectColor"
         >
-          <use
-            xlink:href="#ship"
-            @click="selectColor"
-          />
+          <circle r="1.25" style="fill: none; stroke: none;"/>
+          <use xlink:href="#ship" />
         </g>
       </g>
     `

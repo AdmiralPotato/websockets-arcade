@@ -91,11 +91,15 @@ const gameRenderLoop = () => {
 
 window.requestAnimationFrame(gameRenderLoop)
 
-const initTouch = function () {
+const initTouch = function (event) {
+  event.preventDefault()
+  event.stopImmediatePropagation()
   window.app.createLocalPlayer('touch')
-  document.body.removeEventListener('click', initTouch, true)
+  document.body.removeEventListener('mousedown', initTouch, true)
+  document.body.removeEventListener('touchstart', initTouch, true)
 }
-document.body.addEventListener('click', initTouch, true)
+document.body.addEventListener('mousedown', initTouch, true)
+document.body.addEventListener('touchstart', initTouch, true)
 
 const initGamepad = function (event) {
   const controller = event.id
