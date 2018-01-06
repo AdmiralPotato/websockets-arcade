@@ -12,7 +12,7 @@ const joystickOptions = {
 
 window.attachTouchInputToPlayer = (socket, player) => {
   const touchInput = window.nipplejs.create(joystickOptions)
-  touchInput.on('move', (allJoystickValues, currentJoystickValues) => {
+  const moveListener = (allJoystickValues, currentJoystickValues) => {
     socket.emit(
       'change',
       {
@@ -21,9 +21,18 @@ window.attachTouchInputToPlayer = (socket, player) => {
         angle: currentJoystickValues.angle.radian
       }
     )
-  })
+  }
 
-  touchInput.on('end', () => {
+  const endListener = () => {
     socket.emit('release', {id: player.id})
-  })
+  }
+
+  const disconnectTouch = () => {
+    touchInput.destroy()
+  }
+
+  player.disconnectController = disconnectTouch
+
+  touchInput.on('move', moveListener)
+  touchInput.on('end', endListener)
 }

@@ -23,6 +23,9 @@ window.app = {
     }
     console.log(`Created player:${player.id} with controller:${controller}`)
   },
+  getPlayerById: function (id) {
+    return Object.values(window.app.data.localPlayers).filter((player) => { return player.id === id }).pop()
+  },
   connectPlayer: function (player) {
     socket.emit(
       'connectPlayer',
@@ -36,6 +39,14 @@ window.app = {
     socket.emit('disconnectPlayer', {id: player.id})
     window.Vue.delete(window.app.data.localPlayers, player.controller)
     console.log(`Disconnected player:${player.id} with controller:${player.controller}`)
+  },
+  removePlayer: function (player) {
+    player.disconnectController()
+    window.Vue.delete(window.app.data.localPlayers, player.controller)
+    if (player.controller === 'touch') {
+      initTouch()
+    }
+    console.log(`Removed player:${player.id} with controller:${player.controller}`)
   },
   lastServerState: {}
 }
@@ -60,14 +71,14 @@ window.app.vue = new window.Vue({
 })
 
 socket.on('connectPlayer', (id) => {
-  const player = Object.values(window.app.data.localPlayers).filter((player) => { return player.id === id }).pop()
+  const player = window.app.getPlayerById(id)
   if (player) {
     player.connected = true
     if (player.controller === 'touch') {
       window.attachTouchInputToPlayer(socket, player)
     }
   } else {
-    console.error('Umm... the server seems to think we have a local player that we do not.', id)
+    console.error('Umm... the server asked us to connect a local player that we do not have.', id)
   }
 })
 
@@ -91,15 +102,18 @@ const gameRenderLoop = () => {
 
 window.requestAnimationFrame(gameRenderLoop)
 
-const initTouch = function (event) {
+const handleTouch = function (event) {
   event.preventDefault()
   event.stopImmediatePropagation()
   window.app.createLocalPlayer('touch')
-  document.body.removeEventListener('mousedown', initTouch, true)
-  document.body.removeEventListener('touchstart', initTouch, true)
+  document.body.removeEventListener('mousedown', handleTouch, true)
+  document.body.removeEventListener('touchstart', handleTouch, true)
 }
-document.body.addEventListener('mousedown', initTouch, true)
-document.body.addEventListener('touchstart', initTouch, true)
+const initTouch = function () {
+  document.body.addEventListener('mousedown', handleTouch, true)
+  document.body.addEventListener('touchstart', handleTouch, true)
+}
+initTouch()
 
 const initGamepad = function (event) {
   const controller = event.id
@@ -108,4 +122,14 @@ const initGamepad = function (event) {
     window.app.createLocalPlayer(controller)
   }
 }
+
+socket.on('removePlayer', function (playerId) {
+  let player = window.app.getPlayerById(playerId)
+  if (player) {
+    window.app.removePlayer(player)
+  } else {
+    console.error('Umm... the server asked us to disconect a player that we do not have.', playerId)
+  }
+})
+
 window.gamepadEvents.addEventListener('start', initGamepad)

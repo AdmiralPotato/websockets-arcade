@@ -132,6 +132,8 @@ window.attachGamepadInputToPlayer = (socket, player) => {
     gamepadEvents.removeEventListener('end', endListener)
   }
 
+  player.disconnectController = disconnectGamepad
+
   gamepadEvents.addEventListener('start', startListener)
   gamepadEvents.addEventListener('move', moveListener)
   gamepadEvents.addEventListener('end', endListener)
