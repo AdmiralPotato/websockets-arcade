@@ -28,6 +28,8 @@ window.attachTouchInputToPlayer = (socket, player) => {
   }
 
   const disconnectTouch = () => {
+    touchInput.off('move', moveListener)
+    touchInput.off('end', endListener)
     touchInput.destroy()
   }
 

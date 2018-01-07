@@ -32,12 +32,12 @@
   },
   "homepage": "https://github.com/AdmiralPotato/websockets-arcade#readme",
   "engines": {
-    "node" : "8.x"
+    "node": "8.x"
   },
   "dependencies": {
     "dotenv": "^4.0.0",
     "express": "^4.16.2",
-    "nipplejs": "^0.6.7",
+    "nipplejs": "^0.6.8",
     "socket.io": "^2.0.4",
     "vue": "^2.5.3"
   },
