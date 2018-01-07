@@ -94,7 +94,7 @@ window.mainViewComponent = {
           :scale="0.01"
           pos="0,-0.5" />
         <vector-text
-          text="YOU HAVE FAILED MISERABLY"
+          text="LET'S SEE WHO LOST MOST BEST!"
           :scale="0.01"
           pos="0,-0.6" />
       </g>

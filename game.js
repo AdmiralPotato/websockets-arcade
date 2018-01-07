@@ -6,6 +6,7 @@ const arrayRemove = function (array, item) {
   }
   return array
 }
+const durationScore = 15 * 100 // Score display time = 15s
 const game = {
   drag: 0.955,
   topSpeed: 1 / 80,
@@ -19,11 +20,12 @@ const game = {
   asteroidCount: 0,
   pointsSplit: 2,
   pointsCollect: 5,
-  durationPlay: 30 * 100, // match play time = 2:00; ticks are every 10ms
-  durationScore: 10 * 100, // Score display time = 10s
-  durationScoreA: 8 * 100, // Score display time = 10s
-  durationScoreB: 6 * 100, // Score display time = 10s
-  durationScoreC: 2 * 100, // Score display time = 10s
+  durationPlay: 30 * 100, // ticks are every 10ms
+  durationScore: durationScore,
+  durationScoreA: 0.95 * durationScore,
+  durationScoreB: 0.85 * durationScore,
+  durationScoreC: 0.45 * durationScore,
+  durationScoreD: 0.4 * durationScore,
   durationInactivityBoot: 10 * 1000, // time in ms
   interval: null,
   io: null,
@@ -67,6 +69,21 @@ const game = {
       })
     })
     game.changeModeToIntro()
+    // game.startTheGameWithSomeFakePlayersForTesting()
+  },
+  startTheGameWithSomeFakePlayersForTesting: function () {
+    game.changeModeToPlay()
+    let fakeSocket = {id: 'fakeSocket', players: {}, emit () {}}
+    for (let i = 0; i < 8; i++) {
+      const id = i.toFixed(2)
+      if (!game.players[id]) {
+        game.addPlayer(fakeSocket, {hue: i * 45, id: id})
+      }
+    }
+    game.state.ships.forEach((ship, index) => {
+      ship.score = index * 5
+    })
+    game.state.ships.sort(() => (Math.random() - 0.5)).sort(() => (Math.random() - 0.5))
   },
   changeModeToIntro: () => {
     const now = Date.now()
@@ -116,9 +133,15 @@ const game = {
       ship.y = 0.8
     })
     game.shipStateC = JSON.parse(JSON.stringify(game.shipStateA))
+    const mapY = (score) => {
+      return 0.8 - (score / highScore)
+    }
+    const yMax = mapY(highScore)
     game.shipStateC.forEach((ship, index) => {
       ship.score = scores[index]
-      ship.y = 0.8 - ((ship.score / highScore) * 0.8)
+      ship.scoreMax = highScore
+      ship.y = mapY(ship.score)
+      ship.yMax = yMax
     })
   },
   tickGame: () => {
@@ -142,6 +165,7 @@ const game = {
     if (game.state.mode === 'score') {
       game.state.timer -= 1
       if (game.state.timer <= 0) {
+        // game.startTheGameWithSomeFakePlayersForTesting()
         game.changeModeToIntro()
       } else if (game.state.timer >= game.durationScoreA) {
         let diff = game.state.timer - game.durationScoreA
@@ -155,6 +179,15 @@ const game = {
         let total = game.durationScoreB - game.durationScoreC
         let progress = 1 - (diff / total)
         game.lerpShips(game.shipStateA, game.shipStateC, progress)
+      } else if (game.state.timer <= game.durationScoreD) {
+        const blink = Math.floor((game.state.timer % 100) / 50) < 1
+        game.state.ships.forEach((ship, index) => {
+          const sourceData = game.shipStateC[index]
+          if (sourceData) {
+            const status = sourceData.score === sourceData.scoreMax ? 'Winner!' : 'Loser!'
+            ship.score = blink ? status : ''
+          }
+        })
       }
     }
     const filteredGameState = game.filterStateDataForClientSide()
@@ -187,8 +220,13 @@ const game = {
   },
   lerpShip: (target, a, b, progress) => {
     target.x = game.lerp(a.x, b.x, progress)
-    target.y = game.lerp(a.y, b.y, progress)
-    target.score = Math.floor(game.lerp(a.score, b.score, progress))
+    if (b.yMax === undefined) {
+      target.y = game.lerp(a.y, b.y, progress)
+      target.score = Math.floor(game.lerp(a.score, b.score, progress))
+    } else {
+      target.y = Math.max(b.y, game.lerp(a.y, b.yMax, progress))
+      target.score = Math.min(b.score, Math.floor(game.lerp(a.score, b.scoreMax, progress)))
+    }
   },
   lerp: (a, b, progress) => {
     return a + ((b - a) * progress)

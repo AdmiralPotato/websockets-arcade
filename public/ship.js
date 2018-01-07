@@ -10,7 +10,7 @@ window.shipComponent = {
     hue: Number,
     isPlayer: Boolean,
     hit: Boolean,
-    score: Number
+    score: [Number, String]
   },
   computed: {
     shipTransforms: function () {
