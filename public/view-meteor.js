@@ -1,6 +1,6 @@
 window.tau = Math.PI * 2
 
-window.asteroidComponent = {
+window.meteorComponent = {
   props: {
     id: Number,
     x: Number,
@@ -38,7 +38,7 @@ window.asteroidComponent = {
   },
   template: `
       <g
-        class="asteroid"
+        class="meteor"
         :class="{hit: invincible, consumable}"
         :transform="transforms"
       >

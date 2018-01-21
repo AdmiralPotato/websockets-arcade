@@ -69,7 +69,7 @@ svg .ship.playerShip {
   fill: currentColor;
 }
 
-svg .asteroid {
+svg .meteor {
   stroke-width: 0.025rem;
   color: #fff;
 }
@@ -78,6 +78,6 @@ svg .hit {
   opacity: 0.5;
 }
 
-svg .asteroid.consumable {
+svg .meteor.consumable {
   color: #0f0;
 }

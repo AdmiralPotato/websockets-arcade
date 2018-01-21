@@ -1,7 +1,7 @@
 window.Vue.component('vector-text-defs', window.vectorTextDefsComponent)
 window.Vue.component('vector-text', window.vectorTextComponent)
 window.Vue.component('ship', window.shipComponent)
-window.Vue.component('asteroid', window.asteroidComponent)
+window.Vue.component('meteor', window.meteorComponent)
 window.Vue.component('main-view', window.mainViewComponent)
 window.Vue.component('color-picker', window.colorPickerComponent)
 

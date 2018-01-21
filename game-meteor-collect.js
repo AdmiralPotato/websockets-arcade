@@ -11,13 +11,13 @@ const game = {
   drag: 0.955,
   topSpeed: 1 / 80,
   shipRadius: 1 / 40,
-  asteroidRadiusMin: 1 / 100,
-  asteroidRadiusMax: 1 / 10,
-  asteroidRadiusConsumable: 1 / 50,
-  asteroidVolumeMax: 0.5,
-  asteroidCooldownDefault: 25,
-  asteroidCooldown: 25,
-  asteroidCount: 0,
+  meteorRadiusMin: 1 / 100,
+  meteorRadiusMax: 1 / 10,
+  meteorRadiusConsumable: 1 / 50,
+  meteorVolumeMax: 0.5,
+  meteorCooldownDefault: 25,
+  meteorCooldown: 25,
+  meteorCount: 0,
   pointsSplit: 2,
   pointsCollect: 5,
   durationPlay: 30 * 100, // ticks are every 10ms
@@ -36,7 +36,7 @@ const game = {
     startCircle: null,
     timer: 0,
     ships: [],
-    asteroids: []
+    meteors: []
   },
   shipStateInitial: [],
   shipStateA: [],
@@ -94,7 +94,7 @@ const game = {
       y: 0.8,
       radius: 1 / 8
     }
-    game.populateInitialAsteroids()
+    game.populateInitialMeteors()
     game.state.ships.forEach(ship => {
       ship.score = 0
       game.players[ship.id].lastActiveTime = now
@@ -108,7 +108,7 @@ const game = {
   changeModeToPlay: () => {
     game.state.mode = 'play'
     game.state.startCircle = undefined
-    game.populateInitialAsteroids()
+    game.populateInitialMeteors()
     game.state.ships.forEach(ship => {
       ship.score = 0
     })
@@ -116,7 +116,7 @@ const game = {
   changeModeToScore: () => {
     game.state.mode = 'score'
     game.state.timer = game.durationScore
-    game.state.asteroids = []
+    game.state.meteors = []
     let highScore = 0
     let shipCount = game.state.ships.length
     let scores = []
@@ -148,8 +148,8 @@ const game = {
     const now = Date.now()
     if (game.state.mode !== 'score') {
       game.tickPlayers(now)
-      game.tickAsteroids(now)
-      game.state.asteroids = game.state.asteroids.filter((asteroid) => { return !asteroid.expired })
+      game.tickMeteors(now)
+      game.state.meteors = game.state.meteors.filter((meteor) => { return !meteor.expired })
     }
     if (game.state.mode === 'intro') {
       if (game.areAllShipsInStartCircle()) {
@@ -249,22 +249,22 @@ const game = {
       }
     })
   },
-  tickAsteroids: (now) => {
+  tickMeteors: (now) => {
     game.state.ships.forEach(ship => {
       ship.hit = false
     })
-    game.state.asteroids.forEach(asteroid => {
-      asteroid.x += asteroid.xVel
-      asteroid.y += asteroid.yVel
-      asteroid.angle += asteroid.rotationSpeed
-      game.wrap(asteroid)
-      if (asteroid.invincible > 0) {
-        asteroid.invincible -= 1
+    game.state.meteors.forEach(meteor => {
+      meteor.x += meteor.xVel
+      meteor.y += meteor.yVel
+      meteor.angle += meteor.rotationSpeed
+      game.wrap(meteor)
+      if (meteor.invincible > 0) {
+        meteor.invincible -= 1
       } else {
-        game.detectAsteroidCollisions(asteroid)
+        game.detectMeteorCollisions(meteor)
       }
     })
-    game.generateAsteroids()
+    game.generateMeteors()
   },
   areAllShipsInStartCircle: () => {
     const now = Date.now()
@@ -280,28 +280,28 @@ const game = {
     })
     return readyPlayerCount > 0 && readyPlayerCount === game.state.ships.length
   },
-  detectAsteroidCollisions: (asteroid) => {
+  detectMeteorCollisions: (meteor) => {
     game.state.ships.forEach(ship => {
-      const hit = game.detectCollision(ship, asteroid)
+      const hit = game.detectCollision(ship, meteor)
       if (hit) {
         ship.hit = ship.hit || hit
-        asteroid.expired = asteroid.expired || hit
-        if (asteroid.consumable) {
+        meteor.expired = meteor.expired || hit
+        if (meteor.consumable) {
           ship.score += game.pointsCollect
         } else {
           ship.score += game.pointsSplit
         }
       }
     })
-    if (asteroid.expired && !asteroid.consumable) {
-      game.splitAsteroid(asteroid)
+    if (meteor.expired && !meteor.consumable) {
+      game.splitMeteor(meteor)
     }
   },
-  populateInitialAsteroids: () => {
-    game.state.asteroids = []
-    while (game.state.asteroids.length < 10) {
-      game.state.asteroids.push(
-        game.createAsteroid()
+  populateInitialMeteors: () => {
+    game.state.meteors = []
+    while (game.state.meteors.length < 10) {
+      game.state.meteors.push(
+        game.createMeteor()
       )
     }
   },
@@ -348,29 +348,29 @@ const game = {
       score: 0
     }
   },
-  generateAsteroids: () => {
-    if (game.currentAsteroidVolume() < game.asteroidVolumeMax && game.asteroidCooldown <= 0) {
-      game.state.asteroids.push(game.createAsteroid())
-      game.asteroidCooldown = game.asteroidCooldownDefault
+  generateMeteors: () => {
+    if (game.currentMeteorVolume() < game.meteorVolumeMax && game.meteorCooldown <= 0) {
+      game.state.meteors.push(game.createMeteor())
+      game.meteorCooldown = game.meteorCooldownDefault
     } else {
-      game.asteroidCooldown -= 1
+      game.meteorCooldown -= 1
     }
   },
-  currentAsteroidVolume: () => {
+  currentMeteorVolume: () => {
     let volume = 0
-    game.state.asteroids.forEach(asteroid => {
-      volume += asteroid.radius
+    game.state.meteors.forEach(meteor => {
+      volume += meteor.radius
     })
     return volume
   },
-  createAsteroid: (
+  createMeteor: (
     x = null,
     y = null,
-    radius = Math.max(game.asteroidRadiusMax * Math.random(), game.asteroidRadiusMin)
+    radius = Math.max(game.meteorRadiusMax * Math.random(), game.meteorRadiusMin)
   ) => {
     const angle = Math.random() * tau
     const speed = Math.min((1 / 800), Math.random() * (1 / 600))
-    const id = game.asteroidCount += 1
+    const id = game.meteorCount += 1
     if (x === null || y === null) {
       const edgePostion = game.randomEdgePosition()
       x = edgePostion.x
@@ -386,7 +386,7 @@ const game = {
       radius,
       angle,
       invincible: 100,
-      consumable: radius <= game.asteroidRadiusConsumable
+      consumable: radius <= game.meteorRadiusConsumable
     }
   },
   randomEdgePosition: () => {
@@ -400,13 +400,13 @@ const game = {
   bound: (min, max, value) => {
     return Math.min(max, Math.max(min, value))
   },
-  splitAsteroid: (asteroid) => {
-    const x = asteroid.x
-    const y = asteroid.y
-    const radius = asteroid.radius / 2
-    game.state.asteroids.push(
-      game.createAsteroid(x, y, radius),
-      game.createAsteroid(x, y, radius)
+  splitMeteor: (meteor) => {
+    const x = meteor.x
+    const y = meteor.y
+    const radius = meteor.radius / 2
+    game.state.meteors.push(
+      game.createMeteor(x, y, radius),
+      game.createMeteor(x, y, radius)
     )
   },
   removePlayer: (player) => {
