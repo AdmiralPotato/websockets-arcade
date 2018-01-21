@@ -5,7 +5,7 @@ const app = express()
 const http = require('http')
 const server = http.Server(app)
 const io = require('socket.io')(server)
-const game = require('./game.js')
+const game = require('./game-meteor-collect.js')
 const port = process.env.PORT || 3000
 const clientDependencyMap = {
   '/vue': 'node_modules/vue/dist',
