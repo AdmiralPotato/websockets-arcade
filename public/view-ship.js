@@ -18,7 +18,7 @@ window.shipComponent = {
         'rotate(' + ((this.angle / window.tau) * 360) + ')',
         'scale(' + this.radius + ')'
       ]
-      return transforms.join('')
+      return transforms.join(',')
     },
     scoreDisplay: function () {
       return this.score.toLocaleString()

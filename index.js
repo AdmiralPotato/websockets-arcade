@@ -5,7 +5,7 @@ const app = express()
 const http = require('http')
 const server = http.Server(app)
 const io = require('socket.io')(server)
-const game = require('./game-meteor-collect.js')
+const manager = require('./game-manager.js')
 const port = process.env.PORT || 3000
 const clientDependencyMap = {
   '/vue': 'node_modules/vue/dist',
@@ -24,7 +24,7 @@ app.get('/data', function (request, response) {
   })
 })
 
-game.connectWebSockets(io)
+manager.connectWebSockets(io)
 
 server.listen(port)
 console.log(`Starting up server at: http://localhost:${port}/`)

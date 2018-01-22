@@ -1,16 +1,7 @@
-const tau = Math.PI * 2
-const arrayRemove = function (array, item) {
-  let index
-  while ((index = array.indexOf(item)) !== -1) {
-    array.splice(index, 1)
-  }
-  return array
-}
 const durationScore = 15 * 100 // Score display time = 15s
-const game = {
+const gameMeteorCollect = {
   drag: 0.955,
   topSpeed: 1 / 80,
-  shipRadius: 1 / 40,
   meteorRadiusMin: 1 / 100,
   meteorRadiusMax: 1 / 10,
   meteorRadiusConsumable: 1 / 50,
@@ -27,162 +18,101 @@ const game = {
   durationScoreC: 0.45 * durationScore,
   durationScoreD: 0.4 * durationScore,
   durationInactivityBoot: 10 * 1000, // time in ms
-  interval: null,
-  io: null,
-  players: {},
-  state: {
-    serverStart: Date.now(),
-    mode: 'intro',
-    startCircle: null,
-    timer: 0,
-    ships: [],
-    meteors: []
-  },
   shipStateInitial: [],
   shipStateA: [],
   shipStateC: [],
-  connectWebSockets: (io) => {
-    game.io = io
-    game.io.on('connection', function (socket) {
-      socket.players = {}
-      socket.on('connectPlayer', function (player) {
-        game.addPlayer(socket, player)
-      })
-      socket.on('change', function (moveData) {
-        game.controlChange(socket, moveData)
-      })
-      socket.on('release', function (releaseData) {
-        game.controlRelease(socket, releaseData)
-      })
-      socket.on('disconnectPlayer', function (disconnectPlayerData) {
-        const player = socket.players[disconnectPlayerData.id]
-        if (player) {
-          game.removePlayer(player)
-        } else {
-          console.error('Cheating! Someone is trying to disconnect a player that is not on their socket!')
-        }
-      })
-      socket.on('disconnect', function () {
-        Object.values(socket.players).forEach((player) => {
-          game.removePlayer(player)
-        })
-      })
-    })
-    game.changeModeToIntro()
-    // game.startTheGameWithSomeFakePlayersForTesting()
-  },
-  startTheGameWithSomeFakePlayersForTesting: function () {
-    game.changeModeToPlay()
-    let fakeSocket = {id: 'fakeSocket', players: {}, emit () {}}
-    for (let i = 0; i < 8; i++) {
-      const id = i.toFixed(2)
-      if (!game.players[id]) {
-        game.addPlayer(fakeSocket, {hue: i * 45, id: id})
-      }
-    }
-    game.state.ships.forEach((ship, index) => {
-      ship.score = index * 5
-    })
-    game.state.ships.sort(() => (Math.random() - 0.5)).sort(() => (Math.random() - 0.5))
-  },
-  changeModeToIntro: () => {
+  changeModeToIntro: (players, state) => {
     const now = Date.now()
-    game.state.mode = 'intro'
-    game.state.timer = game.durationPlay
-    game.state.startCircle = {
+    state.mode = 'intro'
+    state.timer = gameMeteorCollect.durationPlay
+    state.startCircle = {
       x: 0,
       y: 0.8,
       radius: 1 / 8
     }
-    game.populateInitialMeteors()
-    game.state.ships.forEach(ship => {
+    gameMeteorCollect.populateInitialMeteors(state)
+    state.ships.forEach(ship => {
       ship.score = 0
-      game.players[ship.id].lastActiveTime = now
+      players[ship.id].lastActiveTime = now
     })
-    clearInterval(game.interval)
-    game.interval = setInterval(
-      game.tickGame,
-      10
-    )
   },
-  changeModeToPlay: () => {
-    game.state.mode = 'play'
-    game.state.startCircle = undefined
-    game.populateInitialMeteors()
-    game.state.ships.forEach(ship => {
+  changeModeToPlay: (players, state) => {
+    state.mode = 'play'
+    state.startCircle = undefined
+    gameMeteorCollect.populateInitialMeteors(state)
+    state.ships.forEach(ship => {
       ship.score = 0
     })
   },
-  changeModeToScore: () => {
-    game.state.mode = 'score'
-    game.state.timer = game.durationScore
-    game.state.meteors = []
+  changeModeToScore: (players, state) => {
+    state.mode = 'score'
+    state.timer = gameMeteorCollect.durationScore
+    state.meteors = []
     let highScore = 0
-    let shipCount = game.state.ships.length
+    let shipCount = state.ships.length
     let scores = []
-    game.state.ships.forEach((ship, index) => {
+    state.ships.forEach((ship, index) => {
       highScore = Math.max(highScore, ship.score)
       scores[index] = ship.score
       ship.score = 0
     })
-    game.shipStateInitial = JSON.parse(JSON.stringify(game.state.ships))
-    game.shipStateA = JSON.parse(JSON.stringify(game.shipStateInitial))
-    game.shipStateA.forEach((ship, index) => {
+    gameMeteorCollect.shipStateInitial = JSON.parse(JSON.stringify(state.ships))
+    gameMeteorCollect.shipStateA = JSON.parse(JSON.stringify(gameMeteorCollect.shipStateInitial))
+    gameMeteorCollect.shipStateA.forEach((ship, index) => {
       ship.score = 0
       ship.x = (((index + 0.5) / shipCount) - 0.5) * (0.8 * 2)
       ship.y = 0.8
     })
-    game.shipStateC = JSON.parse(JSON.stringify(game.shipStateA))
+    gameMeteorCollect.shipStateC = JSON.parse(JSON.stringify(gameMeteorCollect.shipStateA))
     const mapY = (score) => {
       return 0.8 - (score / highScore)
     }
     const yMax = mapY(highScore)
-    game.shipStateC.forEach((ship, index) => {
+    gameMeteorCollect.shipStateC.forEach((ship, index) => {
       ship.score = scores[index]
       ship.scoreMax = highScore
       ship.y = mapY(ship.score)
       ship.yMax = yMax
     })
   },
-  tickGame: () => {
-    const now = Date.now()
-    if (game.state.mode !== 'score') {
-      game.tickPlayers(now)
-      game.tickMeteors(now)
-      game.state.meteors = game.state.meteors.filter((meteor) => { return !meteor.expired })
+  tickGame: (now, players, state) => {
+    if (state.mode !== 'score') {
+      gameMeteorCollect.tickPlayers(now, players, state)
+      gameMeteorCollect.tickMeteors(now, state)
+      state.meteors = state.meteors.filter((meteor) => { return !meteor.expired })
     }
-    if (game.state.mode === 'intro') {
-      if (game.areAllShipsInStartCircle()) {
-        game.changeModeToPlay()
+    if (state.mode === 'intro') {
+      if (gameMeteorCollect.areAllShipsInStartCircle(now, players, state)) {
+        gameMeteorCollect.changeModeToPlay(players, state)
       }
     }
-    if (game.state.mode === 'play') {
-      game.state.timer -= 1
-      if (game.state.timer <= 0) {
-        game.changeModeToScore()
+    if (state.mode === 'play') {
+      state.timer -= 1
+      if (state.timer <= 0) {
+        gameMeteorCollect.changeModeToScore(players, state)
       }
     }
-    if (game.state.mode === 'score') {
-      game.state.timer -= 1
-      if (game.state.timer <= 0) {
+    if (state.mode === 'score') {
+      state.timer -= 1
+      if (state.timer <= 0) {
         // game.startTheGameWithSomeFakePlayersForTesting()
-        game.changeModeToIntro()
-      } else if (game.state.timer >= game.durationScoreA) {
-        let diff = game.state.timer - game.durationScoreA
-        let total = game.durationScore - game.durationScoreA
+        gameMeteorCollect.changeModeToIntro(players, state)
+      } else if (state.timer >= gameMeteorCollect.durationScoreA) {
+        let diff = state.timer - gameMeteorCollect.durationScoreA
+        let total = gameMeteorCollect.durationScore - gameMeteorCollect.durationScoreA
         let progress = 1 - (diff / total)
-        game.lerpShips(game.shipStateInitial, game.shipStateA, progress)
-      } else if (game.state.timer >= game.durationScoreB) {
+        gameMeteorCollect.lerpShips(state, gameMeteorCollect.shipStateInitial, gameMeteorCollect.shipStateA, progress)
+      } else if (state.timer >= gameMeteorCollect.durationScoreB) {
         // just a pause
-      } else if (game.state.timer >= game.durationScoreC) {
-        let diff = game.state.timer - game.durationScoreC
-        let total = game.durationScoreB - game.durationScoreC
+      } else if (state.timer >= gameMeteorCollect.durationScoreC) {
+        let diff = state.timer - gameMeteorCollect.durationScoreC
+        let total = gameMeteorCollect.durationScoreB - gameMeteorCollect.durationScoreC
         let progress = 1 - (diff / total)
-        game.lerpShips(game.shipStateA, game.shipStateC, progress)
-      } else if (game.state.timer <= game.durationScoreD) {
-        const blink = Math.floor((game.state.timer % 100) / 50) < 1
-        game.state.ships.forEach((ship, index) => {
-          const sourceData = game.shipStateC[index]
+        gameMeteorCollect.lerpShips(state, gameMeteorCollect.shipStateA, gameMeteorCollect.shipStateC, progress)
+      } else if (state.timer <= gameMeteorCollect.durationScoreD) {
+        const blink = Math.floor((state.timer % 100) / 50) < 1
+        state.ships.forEach((ship, index) => {
+          const sourceData = gameMeteorCollect.shipStateC[index]
           if (sourceData) {
             const status = sourceData.score === sourceData.scoreMax ? 'Winner!' : 'Loser!'
             ship.score = blink ? status : ''
@@ -190,175 +120,111 @@ const game = {
         })
       }
     }
-    const filteredGameState = game.filterStateDataForClientSide()
-    game.io.emit('state', filteredGameState)
+    return state
   },
-  filterProps: [
-    'xVel',
-    'yVel',
-    'rotationSpeed'
-  ],
-  filterStateDataForClientSide: () => {
-    const result = JSON.parse(JSON.stringify(game.state, (key, value) => {
-      if (game.filterProps.includes(key)) {
-        value = undefined
-      } else if (key !== 'serverStart' && typeof value === 'number') {
-        value = parseFloat(value.toFixed(5))
-      }
-      return value
-    }))
-    return result
-  },
-  lerpShips: (startState, targetState, progress) => {
-    game.state.ships.forEach((ship, index) => {
+  lerpShips: (state, startState, targetState, progress) => {
+    state.ships.forEach((ship, index) => {
       const a = startState[index]
       const b = targetState[index]
       if (a !== undefined && b !== undefined) {
-        game.lerpShip(ship, a, b, progress)
+        gameMeteorCollect.lerpShip(ship, a, b, progress)
       }
     })
   },
   lerpShip: (target, a, b, progress) => {
-    target.x = game.lerp(a.x, b.x, progress)
+    target.x = global.lerp(a.x, b.x, progress)
     if (b.yMax === undefined) {
-      target.y = game.lerp(a.y, b.y, progress)
-      target.score = Math.floor(game.lerp(a.score, b.score, progress))
+      target.y = global.lerp(a.y, b.y, progress)
+      target.score = Math.floor(global.lerp(a.score, b.score, progress))
     } else {
-      target.y = Math.max(b.y, game.lerp(a.y, b.yMax, progress))
-      target.score = Math.min(b.score, Math.floor(game.lerp(a.score, b.scoreMax, progress)))
+      target.y = Math.max(b.y, global.lerp(a.y, b.yMax, progress))
+      target.score = Math.min(b.score, Math.floor(global.lerp(a.score, b.scoreMax, progress)))
     }
   },
-  lerp: (a, b, progress) => {
-    return a + ((b - a) * progress)
-  },
-  tickPlayers: (now) => {
-    game.state.ships.forEach(ship => {
-      let player = game.players[ship.id]
+  tickPlayers: (now, players, state) => {
+    state.ships.forEach(ship => {
+      let player = players[ship.id]
       ship.x += ship.xVel
       ship.y += ship.yVel
-      game.wrap(ship)
+      global.wrap(ship)
 
       if (player.onTime !== null) {
         const timeDiff = now - player.onTime
         const accelerationRampUp = Math.min(1, timeDiff / 1000)
-        ship.xVel = Math.cos(ship.angle) * player.force * accelerationRampUp * game.topSpeed
-        ship.yVel = Math.sin(ship.angle) * player.force * accelerationRampUp * game.topSpeed
+        ship.xVel = Math.cos(ship.angle) * player.force * accelerationRampUp * gameMeteorCollect.topSpeed
+        ship.yVel = Math.sin(ship.angle) * player.force * accelerationRampUp * gameMeteorCollect.topSpeed
       } else {
-        ship.xVel *= game.drag
-        ship.yVel *= game.drag
+        ship.xVel *= gameMeteorCollect.drag
+        ship.yVel *= gameMeteorCollect.drag
       }
     })
   },
-  tickMeteors: (now) => {
-    game.state.ships.forEach(ship => {
+  tickMeteors: (now, state) => {
+    state.ships.forEach(ship => {
       ship.hit = false
     })
-    game.state.meteors.forEach(meteor => {
+    state.meteors.forEach(meteor => {
       meteor.x += meteor.xVel
       meteor.y += meteor.yVel
       meteor.angle += meteor.rotationSpeed
-      game.wrap(meteor)
+      global.wrap(meteor)
       if (meteor.invincible > 0) {
         meteor.invincible -= 1
       } else {
-        game.detectMeteorCollisions(meteor)
+        gameMeteorCollect.detectMeteorCollisions(state, meteor)
       }
     })
-    game.generateMeteors()
+    gameMeteorCollect.generateMeteors(state)
   },
-  areAllShipsInStartCircle: () => {
-    const now = Date.now()
+  areAllShipsInStartCircle: (now, players, state) => {
     let readyPlayerCount = 0
-    game.state.ships.forEach((ship) => {
-      const ready = game.detectCollision(ship, game.state.startCircle)
-      const player = game.players[ship.id]
+    state.ships.forEach((ship) => {
+      const ready = global.detectCollision(ship, state.startCircle)
+      const player = players[ship.id]
       if (ready) {
         readyPlayerCount += 1
-      } else if (now - player.lastActiveTime > game.durationInactivityBoot) {
-        game.bootPlayer(player)
+      } else if (now - player.lastActiveTime > gameMeteorCollect.durationInactivityBoot) {
+        player.needsBooting = true
       }
     })
-    return readyPlayerCount > 0 && readyPlayerCount === game.state.ships.length
+    return readyPlayerCount > 0 && readyPlayerCount === state.ships.length
   },
-  detectMeteorCollisions: (meteor) => {
-    game.state.ships.forEach(ship => {
-      const hit = game.detectCollision(ship, meteor)
+  detectMeteorCollisions: (state, meteor) => {
+    state.ships.forEach(ship => {
+      const hit = global.detectCollision(ship, meteor)
       if (hit) {
         ship.hit = ship.hit || hit
         meteor.expired = meteor.expired || hit
         if (meteor.consumable) {
-          ship.score += game.pointsCollect
+          ship.score += gameMeteorCollect.pointsCollect
         } else {
-          ship.score += game.pointsSplit
+          ship.score += gameMeteorCollect.pointsSplit
         }
       }
     })
     if (meteor.expired && !meteor.consumable) {
-      game.splitMeteor(meteor)
+      gameMeteorCollect.splitMeteor(state, meteor)
     }
   },
-  populateInitialMeteors: () => {
-    game.state.meteors = []
-    while (game.state.meteors.length < 10) {
-      game.state.meteors.push(
-        game.createMeteor()
+  populateInitialMeteors: (state) => {
+    state.meteors = []
+    while (state.meteors.length < 10) {
+      state.meteors.push(
+        gameMeteorCollect.createMeteor()
       )
     }
   },
-  wrap: (target) => {
-    target.x = (Math.abs(target.x) > 1 ? -1 * Math.sign(target.x) : target.x) || 0
-    target.y = (Math.abs(target.y) > 1 ? -1 * Math.sign(target.y) : target.y) || 0
-  },
-  detectCollision: (a, b) => {
-    const diffX = a.x - b.x
-    const diffY = a.y - b.y
-    const distance = Math.sqrt((diffX * diffX) + (diffY * diffY))
-    return distance < a.radius + b.radius
-  },
-  addPlayer: (socket, player) => {
-    if (!game.players[player.id]) {
-      player.force = 0
-      player.onTime = null
-      player.ship = game.createShip(player)
-      player.socket = socket
-      player.lastActiveTime = Date.now()
-      socket.players[player.id] = player
-      game.players[player.id] = player
-      game.state.ships.push(player.ship)
-      socket.emit('connectPlayer', player.id)
-      game.reportPlayerCount(game.io)
-      console.log(`Connecting player:${player.id} to socket:${socket.id}`)
+  generateMeteors: (state) => {
+    if (gameMeteorCollect.currentMeteorVolume(state) < gameMeteorCollect.meteorVolumeMax && gameMeteorCollect.meteorCooldown <= 0) {
+      state.meteors.push(gameMeteorCollect.createMeteor())
+      gameMeteorCollect.meteorCooldown = gameMeteorCollect.meteorCooldownDefault
     } else {
-      console.error('Cheating! Someone is trying to become another connected player!')
+      gameMeteorCollect.meteorCooldown -= 1
     }
   },
-  createShip: (player) => {
-    const radius = 0.5
-    const angle = Math.random() * Math.PI * 2
-    return {
-      id: player.id,
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius,
-      xVel: 0,
-      yVel: 0,
-      angle: 0,
-      radius: game.shipRadius,
-      hue: player.hue,
-      hit: false,
-      score: 0
-    }
-  },
-  generateMeteors: () => {
-    if (game.currentMeteorVolume() < game.meteorVolumeMax && game.meteorCooldown <= 0) {
-      game.state.meteors.push(game.createMeteor())
-      game.meteorCooldown = game.meteorCooldownDefault
-    } else {
-      game.meteorCooldown -= 1
-    }
-  },
-  currentMeteorVolume: () => {
+  currentMeteorVolume: (state) => {
     let volume = 0
-    game.state.meteors.forEach(meteor => {
+    state.meteors.forEach(meteor => {
       volume += meteor.radius
     })
     return volume
@@ -366,13 +232,13 @@ const game = {
   createMeteor: (
     x = null,
     y = null,
-    radius = Math.max(game.meteorRadiusMax * Math.random(), game.meteorRadiusMin)
+    radius = Math.max(gameMeteorCollect.meteorRadiusMax * Math.random(), gameMeteorCollect.meteorRadiusMin)
   ) => {
-    const angle = Math.random() * tau
+    const angle = Math.random() * global.tau
     const speed = Math.min((1 / 800), Math.random() * (1 / 600))
-    const id = game.meteorCount += 1
+    const id = gameMeteorCollect.meteorCount += 1
     if (x === null || y === null) {
-      const edgePostion = game.randomEdgePosition()
+      const edgePostion = global.randomEdgePosition()
       x = edgePostion.x
       y = edgePostion.y
     }
@@ -386,68 +252,18 @@ const game = {
       radius,
       angle,
       invincible: 100,
-      consumable: radius <= game.meteorRadiusConsumable
+      consumable: radius <= gameMeteorCollect.meteorRadiusConsumable
     }
   },
-  randomEdgePosition: () => {
-    const angle = Math.random() * tau
-    const radius = 2
-    return {
-      x: game.bound(-1, 1, Math.cos(angle) * radius),
-      y: game.bound(-1, 1, Math.sin(angle) * radius)
-    }
-  },
-  bound: (min, max, value) => {
-    return Math.min(max, Math.max(min, value))
-  },
-  splitMeteor: (meteor) => {
+  splitMeteor: (state, meteor) => {
     const x = meteor.x
     const y = meteor.y
     const radius = meteor.radius / 2
-    game.state.meteors.push(
-      game.createMeteor(x, y, radius),
-      game.createMeteor(x, y, radius)
+    state.meteors.push(
+      gameMeteorCollect.createMeteor(x, y, radius),
+      gameMeteorCollect.createMeteor(x, y, radius)
     )
-  },
-  removePlayer: (player) => {
-    delete player.socket.players[player.id]
-    delete player.socket
-    delete game.players[player.id]
-    arrayRemove(game.state.ships, player.ship)
-    game.reportPlayerCount()
-  },
-  bootPlayer: (player) => {
-    player.socket.emit('removePlayer', player.id)
-    game.removePlayer(player)
-  },
-  controlChange: (socket, moveData) => {
-    const player = socket.players[moveData.id]
-    if (player) {
-      if (!player.onTime) {
-        player.onTime = Date.now()
-      }
-      player.lastActiveTime = Date.now()
-      player.force = Math.min(1, moveData.force)
-      player.ship.angle = (moveData.angle !== undefined ? -moveData.angle : player.ship.angle)
-    } else {
-      console.error('Cheating! Someone is trying to control a ship that is not on their socket!')
-    }
-  },
-  controlRelease: (socket, releaseData) => {
-    const player = socket.players[releaseData.id]
-    if (player) {
-      player.onTime = null
-      player.lastActiveTime = Date.now()
-    } else {
-      console.error('Cheating! Someone is trying to stop a ship that is not on their socket!')
-    }
-  },
-  reportPlayerCount: () => {
-    const connectedPlayers = Object.values(game.players).length
-    console.log('Connected players:', connectedPlayers)
-    game.io.emit('players', connectedPlayers)
-    game.io.emit('state', game.state)
   }
 }
 
-module.exports = game
+module.exports = gameMeteorCollect
