@@ -103,6 +103,7 @@ global.totalPlayerScores = (players, state) => {
     scores[index] = ship.score
     ship.score = 0
   })
+  highScore = highScore || 1 // protect against division by 0 if all players score 0
   snapshots.shipStateInitial = JSON.parse(JSON.stringify(state.ships))
   snapshots.shipStateA = JSON.parse(JSON.stringify(snapshots.shipStateInitial))
   snapshots.shipStateA.forEach((ship, index) => {
