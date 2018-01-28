@@ -17,7 +17,6 @@ const gameMeteorCollect = {
   durationScoreB: 0.85 * durationScore,
   durationScoreC: 0.45 * durationScore,
   durationScoreD: 0.4 * durationScore,
-  durationInactivityBoot: 10 * 1000, // time in ms
   shipStateInitial: [],
   shipStateA: [],
   shipStateC: [],
@@ -25,11 +24,7 @@ const gameMeteorCollect = {
     const now = Date.now()
     state.mode = 'intro'
     state.timer = gameMeteorCollect.durationPlay
-    state.startCircle = {
-      x: 0,
-      y: 0.8,
-      radius: 1 / 8
-    }
+    state.startCircle = global.activityCircle({y: 0.8})
     gameMeteorCollect.populateInitialMeteors(state)
     state.ships.forEach(ship => {
       ship.score = 0
@@ -82,7 +77,14 @@ const gameMeteorCollect = {
       state.meteors = state.meteors.filter((meteor) => { return !meteor.expired })
     }
     if (state.mode === 'intro') {
-      if (gameMeteorCollect.areAllShipsInStartCircle(now, players, state)) {
+      let startGame = global.circleSelectCountdown(
+        now,
+        state.startCircle,
+        players,
+        state,
+        true
+      )
+      if (startGame) {
         gameMeteorCollect.changeModeToPlay(players, state)
       }
     }
@@ -175,19 +177,6 @@ const gameMeteorCollect = {
       }
     })
     gameMeteorCollect.generateMeteors(state)
-  },
-  areAllShipsInStartCircle: (now, players, state) => {
-    let readyPlayerCount = 0
-    state.ships.forEach((ship) => {
-      const ready = global.detectCollision(ship, state.startCircle)
-      const player = players[ship.id]
-      if (ready) {
-        readyPlayerCount += 1
-      } else if (now - player.lastActiveTime > gameMeteorCollect.durationInactivityBoot) {
-        player.needsBooting = true
-      }
-    })
-    return readyPlayerCount > 0 && readyPlayerCount === state.ships.length
   },
   detectMeteorCollisions: (state, meteor) => {
     state.ships.forEach(ship => {

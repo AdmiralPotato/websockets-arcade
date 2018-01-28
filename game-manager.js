@@ -75,7 +75,9 @@ const manager = {
   filterProps: [
     'xVel',
     'yVel',
-    'rotationSpeed'
+    'rotationSpeed',
+    'tick',
+    'ticksToActivate'
   ],
   filterStateDataForClientSide: (state) => {
     const result = JSON.parse(JSON.stringify(state, (key, value) => {

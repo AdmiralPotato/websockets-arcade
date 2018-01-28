@@ -65,6 +65,11 @@ svg .vector-text.text-timer {
   color: #f00;
 }
 
+svg .countdown-tick {
+  color: currentColor;
+  opacity: 0.5;
+}
+
 svg .ship.playerShip {
   fill: currentColor;
 }

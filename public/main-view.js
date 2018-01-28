@@ -1,10 +1,8 @@
 window.mainViewComponent = {
   props: {
     state: Object,
-    game: String,
     localPlayers: Object,
-    showColorPicker: Boolean,
-    ships: Array
+    showColorPicker: Boolean
   },
   computed: {
     localPlayerIds: function () {
@@ -20,22 +18,24 @@ window.mainViewComponent = {
     }
   },
   template: `
-    <svg viewBox="-1 -1 2 2">
-      <rect class="bounding-rect" x="-1" y="-1" width="2" height="2" />
+    <svg class="main-view" viewBox="-1 -1 2 2">
       <shape-defs />
-      <component
-        v-if="game"
-        v-bind="state"
-        :is="'game-' + game"
-      />
-      <g class="ships">
-        <ship
-          v-for="ship in ships"
-          v-bind="ship"
-          :isPlayer="isLocalPlayer(ship)"
-          :key="ship.id"
+      <g clip-path="url(#clipping-rect)">
+        <component
+          v-if="state.game"
+          v-bind="state"
+          :is="'game-' + state.game"
         />
+        <g class="ships">
+          <ship
+            v-for="ship in state.ships"
+            v-bind="ship"
+            :isPlayer="isLocalPlayer(ship)"
+            :key="ship.id"
+          />
+        </g>
       </g>
+      <use xlink:href="#bounding-rect" class="bounding-rect" />
       <g class="color-pickers"
         v-if="localPlayersThatNeedToPickColor.length"
       >

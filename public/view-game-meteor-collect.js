@@ -22,12 +22,10 @@ window.gameMeteorCollectComponent = {
       <g class="mode-intro"
         v-if="mode === 'intro'"
       >
-        <circle
-          :r="startCircle.radius"
-          :cx="startCircle.x"
-          :cy="startCircle.y"
-          style="color: #f00;"
-          />
+        <countdown-circle
+          v-bind="startCircle"
+          label="start game"
+        />
         <vector-text
           text="METEOR COLLECT"
           :scale="0.04"

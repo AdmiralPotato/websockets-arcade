@@ -1,5 +1,6 @@
 window.Vue.component('vector-text-defs', window.vectorTextDefsComponent)
 window.Vue.component('vector-text', window.vectorTextComponent)
+window.Vue.component('countdown-circle', window.countdownCircleComponent)
 window.Vue.component('ship', window.shipComponent)
 window.Vue.component('meteor', window.meteorComponent)
 window.Vue.component('color-picker', window.colorPickerComponent)
@@ -12,8 +13,9 @@ window.app = {
     localPlayers: {},
     state: {}
   },
+  randomHash: function () { return parseInt((Math.random() * 1e15).toFixed(0), 10).toString(36) },
   createLocalPlayer: function (controller) {
-    const id = parseInt((Math.random() * 1e15).toFixed(0), 10).toString(36)
+    const id = window.app.randomHash()
     const player = {
       controller: controller,
       id: id,
@@ -65,7 +67,6 @@ window.app.vue = new window.Vue({
   },
   template: `
     <main-view
-      v-bind="state"
       :state="state"
       :localPlayers="localPlayers"
       @selectColor="selectColor"
