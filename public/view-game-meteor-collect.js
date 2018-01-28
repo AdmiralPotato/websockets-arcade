@@ -24,7 +24,6 @@ window.gameMeteorCollectComponent = {
       >
         <countdown-circle
           v-bind="startCircle"
-          label="start game"
         />
         <vector-text
           text="METEOR COLLECT"

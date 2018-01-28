@@ -84,7 +84,7 @@ global.circleSelectCountdown = (now, circle, players, state, bootIfInactive) => 
 global.tickCircle = (circle, tick = circle.tick) => {
   circle.tick = tick
   circle.frac = circle.tick / circle.ticksToActivate
-  circle.sec = parseFloat(((circle.ticksToActivate / 100) * (1 - circle.frac)).toPrecision(2)).toFixed(1)
+  circle.sec = circle.frac ? parseFloat(((circle.ticksToActivate / 100) * (1 - circle.frac)).toPrecision(2)).toFixed(1) : undefined
 }
 global.totalPlayerScores = (players, state) => {
   const snapshots = {

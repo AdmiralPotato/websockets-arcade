@@ -18,7 +18,7 @@ window.countdownCircleComponent = {
     },
     label: {
       type: [String, Number],
-      required: true
+      required: false
     },
     frac: {
       type: Number,
@@ -59,7 +59,7 @@ window.countdownCircleComponent = {
       const frac = (i + 1) / this.ticks
       return {
         hash: this.lineHash,
-        on: frac > this.frac,
+        on: this.frac && frac > this.frac,
         transform: `rotate(${(360 * frac) - 90})`
       }
     }
@@ -81,11 +81,13 @@ window.countdownCircleComponent = {
         />
       </defs>
       <vector-text
-        :text="label"
+        v-if="label"
+        :text="label.toString()"
         :scale="0.01"
         :pos="'0,' + (-0.06 - outerCircleRadius)"
       />
       <vector-text
+        v-if="sec"
         :text="sec.toString()"
         :scale="0.02"
       />
@@ -101,7 +103,7 @@ window.countdownCircleComponent = {
         :r="radius"
       />
       <circle
-        class="fffff"
+        v-if="frac"
         :r="outerCircleRadius"
       />
     </g>
