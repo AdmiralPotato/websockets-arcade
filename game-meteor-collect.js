@@ -1,4 +1,3 @@
-const durationScore = 15 * 100 // Score display time = 15s
 const gameMeteorCollect = {
   drag: 0.955,
   topSpeed: 1 / 80,
@@ -12,14 +11,17 @@ const gameMeteorCollect = {
   pointsSplit: 2,
   pointsCollect: 5,
   durationPlay: 30 * 100, // ticks are every 10ms
-  durationScore: durationScore,
-  durationScoreA: 0.95 * durationScore,
-  durationScoreB: 0.85 * durationScore,
-  durationScoreC: 0.45 * durationScore,
-  durationScoreD: 0.4 * durationScore,
-  shipStateInitial: [],
-  shipStateA: [],
-  shipStateC: [],
+  activate: (players, state) => {
+    Object.assign(
+      state,
+      {
+        timer: 0,
+        startCircle: null,
+        meteors: []
+      }
+    )
+    gameMeteorCollect.changeModeToIntro(players, state)
+  },
   changeModeToIntro: (players, state) => {
     const now = Date.now()
     state.mode = 'intro'
@@ -38,37 +40,10 @@ const gameMeteorCollect = {
     state.ships.forEach(ship => {
       ship.score = 0
     })
+    state.events.emit('start')
   },
   changeModeToScore: (players, state) => {
-    state.mode = 'score'
-    state.timer = gameMeteorCollect.durationScore
-    state.meteors = []
-    let highScore = 0
-    let shipCount = state.ships.length
-    let scores = []
-    state.ships.forEach((ship, index) => {
-      highScore = Math.max(highScore, ship.score)
-      scores[index] = ship.score
-      ship.score = 0
-    })
-    gameMeteorCollect.shipStateInitial = JSON.parse(JSON.stringify(state.ships))
-    gameMeteorCollect.shipStateA = JSON.parse(JSON.stringify(gameMeteorCollect.shipStateInitial))
-    gameMeteorCollect.shipStateA.forEach((ship, index) => {
-      ship.score = 0
-      ship.x = (((index + 0.5) / shipCount) - 0.5) * (0.8 * 2)
-      ship.y = 0.8
-    })
-    gameMeteorCollect.shipStateC = JSON.parse(JSON.stringify(gameMeteorCollect.shipStateA))
-    const mapY = (score) => {
-      return 0.8 - (score / highScore)
-    }
-    const yMax = mapY(highScore)
-    gameMeteorCollect.shipStateC.forEach((ship, index) => {
-      ship.score = scores[index]
-      ship.scoreMax = highScore
-      ship.y = mapY(ship.score)
-      ship.yMax = yMax
-    })
+    global.totalPlayerScores(players, state)
   },
   tickGame: (now, players, state) => {
     if (state.mode !== 'score') {
@@ -95,53 +70,9 @@ const gameMeteorCollect = {
       }
     }
     if (state.mode === 'score') {
-      state.timer -= 1
-      if (state.timer <= 0) {
-        // game.startTheGameWithSomeFakePlayersForTesting()
-        gameMeteorCollect.changeModeToIntro(players, state)
-      } else if (state.timer >= gameMeteorCollect.durationScoreA) {
-        let diff = state.timer - gameMeteorCollect.durationScoreA
-        let total = gameMeteorCollect.durationScore - gameMeteorCollect.durationScoreA
-        let progress = 1 - (diff / total)
-        gameMeteorCollect.lerpShips(state, gameMeteorCollect.shipStateInitial, gameMeteorCollect.shipStateA, progress)
-      } else if (state.timer >= gameMeteorCollect.durationScoreB) {
-        // just a pause
-      } else if (state.timer >= gameMeteorCollect.durationScoreC) {
-        let diff = state.timer - gameMeteorCollect.durationScoreC
-        let total = gameMeteorCollect.durationScoreB - gameMeteorCollect.durationScoreC
-        let progress = 1 - (diff / total)
-        gameMeteorCollect.lerpShips(state, gameMeteorCollect.shipStateA, gameMeteorCollect.shipStateC, progress)
-      } else if (state.timer <= gameMeteorCollect.durationScoreD) {
-        const blink = Math.floor((state.timer % 100) / 50) < 1
-        state.ships.forEach((ship, index) => {
-          const sourceData = gameMeteorCollect.shipStateC[index]
-          if (sourceData) {
-            const status = sourceData.score === sourceData.scoreMax ? 'Winner!' : 'Loser!'
-            ship.score = blink ? status : ''
-          }
-        })
-      }
+      global.animatePlayerScores(players, state)
     }
     return state
-  },
-  lerpShips: (state, startState, targetState, progress) => {
-    state.ships.forEach((ship, index) => {
-      const a = startState[index]
-      const b = targetState[index]
-      if (a !== undefined && b !== undefined) {
-        gameMeteorCollect.lerpShip(ship, a, b, progress)
-      }
-    })
-  },
-  lerpShip: (target, a, b, progress) => {
-    target.x = global.lerp(a.x, b.x, progress)
-    if (b.yMax === undefined) {
-      target.y = global.lerp(a.y, b.y, progress)
-      target.score = Math.floor(global.lerp(a.score, b.score, progress))
-    } else {
-      target.y = Math.max(b.y, global.lerp(a.y, b.yMax, progress))
-      target.score = Math.min(b.score, Math.floor(global.lerp(a.score, b.scoreMax, progress)))
-    }
   },
   tickPlayers: (now, players, state) => {
     state.ships.forEach(ship => {

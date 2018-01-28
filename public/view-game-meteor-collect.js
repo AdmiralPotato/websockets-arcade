@@ -44,7 +44,7 @@ window.gameMeteorCollectComponent = {
           :scale="0.01"
           pos="0,-0.8" />
       </g>
-      <g class="mode-intro"
+      <g class="mode-score"
         v-if="mode === 'score'"
       >
         <vector-text

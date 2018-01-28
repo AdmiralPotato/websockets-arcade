@@ -1,5 +1,8 @@
 require('./game-globals')
-const gameMeteorCollect = require('./game-meteor-collect.js')
+const EventEmitter = require('events')
+const gameMap = {
+  'meteor-collect': require('./game-meteor-collect.js')
+}
 
 const manager = {
   interval: null,
@@ -8,14 +11,11 @@ const manager = {
   shipRadius: 1 / 40,
   state: {
     serverStart: Date.now(),
-    game: 'meteor-collect',
-    mode: 'intro',
-    startCircle: null,
-    timer: 0,
+    game: null,
     ships: [],
-    meteors: []
+    events: new EventEmitter()
   },
-  currentGame: gameMeteorCollect,
+  currentGame: null,
   connectWebSockets: (io) => {
     manager.io = io
     manager.io.on('connection', function (socket) {
@@ -48,11 +48,16 @@ const manager = {
       manager.tickGame,
       10
     )
-    manager.currentGame.changeModeToIntro(manager.players, manager.state)
-    // game.startTheGameWithSomeFakePlayersForTesting()
+    manager.state.events.on('start', manager.onGameStart)
+    manager.state.events.on('end', manager.onGameEnd)
+    manager.activateGame('meteor-collect')
   },
-  startTheGameWithSomeFakePlayersForTesting: function () {
-    manager.currentGame.changeModeToPlay(manager.players, manager.state)
+  activateGame: (gameName) => {
+    manager.state.game = gameName
+    manager.currentGame = gameMap[gameName]
+    manager.currentGame.activate(manager.players, manager.state)
+  },
+  initFakePlayersForTesting: function () {
     let fakeSocket = {id: 'fakeSocket', players: {}, emit () {}}
     for (let i = 0; i < 8; i++) {
       const id = i.toFixed(2)
@@ -72,12 +77,22 @@ const manager = {
     manager.io.emit('state', filteredGameState)
     manager.bootPlayersThatNeedBooting(manager.players)
   },
+  onGameStart: (e) => {
+    console.log('manager.onGameStart', e)
+    // manager.initFakePlayersForTesting()
+  },
+  onGameEnd: (e) => {
+    console.log('manager.onGameEnd', e)
+    manager.currentGame.changeModeToIntro(manager.players, manager.state)
+  },
   filterProps: [
     'xVel',
     'yVel',
     'rotationSpeed',
     'tick',
-    'ticksToActivate'
+    'ticksToActivate',
+    'scoreSnapshots',
+    'events'
   ],
   filterStateDataForClientSide: (state) => {
     const result = JSON.parse(JSON.stringify(state, (key, value) => {
