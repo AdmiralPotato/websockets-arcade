@@ -6,6 +6,16 @@ global.arrayRemove = function (array, item) {
   }
   return array
 }
+global.rangeRand = (min, max) => {
+  const diff = max - min
+  return min + (diff * Math.random())
+}
+global.mapRange = (a, b, x, y, valueAB) => {
+  const diff0 = a - b
+  const diff1 = x - y
+  const valueDiff = (valueAB - b) / diff0
+  return y + (valueDiff * diff1)
+}
 global.bound = (min, max, value) => {
   return Math.min(max, Math.max(min, value))
 }
@@ -30,6 +40,26 @@ global.randomEdgePosition = () => {
 global.lerp = (a, b, progress) => {
   return a + ((b - a) * progress)
 }
+global.playerDrag = 0.955
+global.playerMaxSpeed = 1 / 80
+global.tickPlayers = (now, players, state) => {
+  state.ships.forEach(ship => {
+    let player = players[ship.id]
+    ship.x += ship.xVel
+    ship.y += ship.yVel
+    global.wrap(ship)
+
+    if (player.onTime !== null) {
+      const timeDiff = now - player.onTime
+      const accelerationRampUp = Math.min(1, timeDiff / 1000)
+      ship.xVel = Math.cos(ship.angle) * player.force * accelerationRampUp * global.playerMaxSpeed
+      ship.yVel = Math.sin(ship.angle) * player.force * accelerationRampUp * global.playerMaxSpeed
+    } else {
+      ship.xVel *= global.playerDrag
+      ship.yVel *= global.playerDrag
+    }
+  })
+}
 global.activityCircleDefaults = {
   x: 0,
   y: 0,
@@ -41,7 +71,7 @@ global.activityCircleDefaults = {
   ticksToActivate: 300
 }
 global.activityCircle = (config) => {
-  return Object.assign(global.activityCircleDefaults, config)
+  return Object.assign({}, global.activityCircleDefaults, config)
 }
 global.playersInCircle = (circle, players, state) => {
   const result = {
@@ -58,20 +88,19 @@ global.playersInCircle = (circle, players, state) => {
 }
 global.durationInactivityBoot = 10 * 1000 // time in ms
 global.circleSelectCountdown = (now, circle, players, state, bootIfInactive) => {
-  const states = global.playersInCircle(circle, players, state)
-  const readyPlayerCount = states.in.length
+  const playerCircleStates = global.playersInCircle(circle, players, state)
+  const readyPlayerCount = playerCircleStates.in.length
   const allPlayersReady = readyPlayerCount && readyPlayerCount === state.ships.length
   let activate = false
   if (!allPlayersReady && bootIfInactive) {
-    states.out.forEach((player) => {
+    playerCircleStates.out.forEach((player) => {
       if (now - player.lastActiveTime > global.durationInactivityBoot) {
         player.needsBooting = true
       }
     })
   }
   if (allPlayersReady) {
-    circle.tick += 1
-    global.tickCircle(circle)
+    global.tickCircle(circle, circle.tick + 1)
     activate = circle.tick >= circle.ticksToActivate
     if (activate) {
       setTimeout(() => { global.tickCircle(circle, 0) }, 200)
@@ -94,7 +123,6 @@ global.totalPlayerScores = (players, state) => {
   }
   state.mode = 'score'
   state.timer = global.durationScore
-  state.meteors = []
   let highScore = 0
   let shipCount = state.ships.length
   let scores = []

@@ -6,6 +6,7 @@ window.Vue.component('meteor', window.meteorComponent)
 window.Vue.component('color-picker', window.colorPickerComponent)
 window.Vue.component('shape-defs', window.shapeDefsComponent)
 window.Vue.component('game-meteor-collect', window.gameMeteorCollectComponent)
+window.Vue.component('game-slurp', window.gameSlurpComponent)
 window.Vue.component('main-view', window.mainViewComponent)
 
 window.app = {

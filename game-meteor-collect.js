@@ -1,13 +1,14 @@
-const gameMeteorCollect = {
-  drag: 0.955,
-  topSpeed: 1 / 80,
+const game = {
   meteorRadiusMin: 1 / 100,
   meteorRadiusMax: 1 / 10,
   meteorRadiusConsumable: 1 / 50,
+  asteroidMinSpeed: 1 / 8000,
+  asteroidMaxSpeed: 1 / 700,
   meteorVolumeMax: 0.5,
   meteorCooldownDefault: 25,
   meteorCooldown: 25,
-  meteorCount: 0,
+  meteorLastId: 0,
+  meteorStartCount: 10,
   pointsSplit: 2,
   pointsCollect: 5,
   durationPlay: 30 * 100, // ticks are every 10ms
@@ -20,14 +21,14 @@ const gameMeteorCollect = {
         meteors: []
       }
     )
-    gameMeteorCollect.changeModeToIntro(players, state)
+    game.changeModeToIntro(players, state)
   },
   changeModeToIntro: (players, state) => {
     const now = Date.now()
     state.mode = 'intro'
-    state.timer = gameMeteorCollect.durationPlay
+    state.timer = game.durationPlay
     state.startCircle = global.activityCircle({y: 0.8})
-    gameMeteorCollect.populateInitialMeteors(state)
+    game.populateInitialMeteors(state)
     state.ships.forEach(ship => {
       ship.score = 0
       players[ship.id].lastActiveTime = now
@@ -36,20 +37,20 @@ const gameMeteorCollect = {
   changeModeToPlay: (players, state) => {
     state.mode = 'play'
     state.startCircle = undefined
-    gameMeteorCollect.populateInitialMeteors(state)
+    game.populateInitialMeteors(state)
     state.ships.forEach(ship => {
       ship.score = 0
     })
     state.events.emit('start')
   },
   changeModeToScore: (players, state) => {
+    state.meteors = []
     global.totalPlayerScores(players, state)
   },
   tickGame: (now, players, state) => {
     if (state.mode !== 'score') {
-      gameMeteorCollect.tickPlayers(now, players, state)
-      gameMeteorCollect.tickMeteors(now, state)
-      state.meteors = state.meteors.filter((meteor) => { return !meteor.expired })
+      global.tickPlayers(now, players, state)
+      game.tickMeteors(now, state)
     }
     if (state.mode === 'intro') {
       let startGame = global.circleSelectCountdown(
@@ -60,37 +61,19 @@ const gameMeteorCollect = {
         true
       )
       if (startGame) {
-        gameMeteorCollect.changeModeToPlay(players, state)
+        game.changeModeToPlay(players, state)
       }
     }
     if (state.mode === 'play') {
       state.timer -= 1
       if (state.timer <= 0) {
-        gameMeteorCollect.changeModeToScore(players, state)
+        game.changeModeToScore(players, state)
       }
     }
     if (state.mode === 'score') {
       global.animatePlayerScores(players, state)
     }
     return state
-  },
-  tickPlayers: (now, players, state) => {
-    state.ships.forEach(ship => {
-      let player = players[ship.id]
-      ship.x += ship.xVel
-      ship.y += ship.yVel
-      global.wrap(ship)
-
-      if (player.onTime !== null) {
-        const timeDiff = now - player.onTime
-        const accelerationRampUp = Math.min(1, timeDiff / 1000)
-        ship.xVel = Math.cos(ship.angle) * player.force * accelerationRampUp * gameMeteorCollect.topSpeed
-        ship.yVel = Math.sin(ship.angle) * player.force * accelerationRampUp * gameMeteorCollect.topSpeed
-      } else {
-        ship.xVel *= gameMeteorCollect.drag
-        ship.yVel *= gameMeteorCollect.drag
-      }
-    })
   },
   tickMeteors: (now, state) => {
     state.ships.forEach(ship => {
@@ -104,10 +87,11 @@ const gameMeteorCollect = {
       if (meteor.invincible > 0) {
         meteor.invincible -= 1
       } else {
-        gameMeteorCollect.detectMeteorCollisions(state, meteor)
+        game.detectMeteorCollisions(state, meteor)
       }
     })
-    gameMeteorCollect.generateMeteors(state)
+    state.meteors = state.meteors.filter((meteor) => { return !meteor.expired })
+    game.generateMeteors(state)
   },
   detectMeteorCollisions: (state, meteor) => {
     state.ships.forEach(ship => {
@@ -116,30 +100,30 @@ const gameMeteorCollect = {
         ship.hit = ship.hit || hit
         meteor.expired = meteor.expired || hit
         if (meteor.consumable) {
-          ship.score += gameMeteorCollect.pointsCollect
+          ship.score += game.pointsCollect
         } else {
-          ship.score += gameMeteorCollect.pointsSplit
+          ship.score += game.pointsSplit
         }
       }
     })
     if (meteor.expired && !meteor.consumable) {
-      gameMeteorCollect.splitMeteor(state, meteor)
+      game.splitMeteor(state, meteor)
     }
   },
   populateInitialMeteors: (state) => {
     state.meteors = []
-    while (state.meteors.length < 10) {
+    while (state.meteors.length < game.meteorStartCount) {
       state.meteors.push(
-        gameMeteorCollect.createMeteor()
+        game.createMeteor()
       )
     }
   },
   generateMeteors: (state) => {
-    if (gameMeteorCollect.currentMeteorVolume(state) < gameMeteorCollect.meteorVolumeMax && gameMeteorCollect.meteorCooldown <= 0) {
-      state.meteors.push(gameMeteorCollect.createMeteor())
-      gameMeteorCollect.meteorCooldown = gameMeteorCollect.meteorCooldownDefault
+    if (game.currentMeteorVolume(state) < game.meteorVolumeMax && game.meteorCooldown <= 0) {
+      state.meteors.push(game.createMeteor())
+      game.meteorCooldown = game.meteorCooldownDefault
     } else {
-      gameMeteorCollect.meteorCooldown -= 1
+      game.meteorCooldown -= 1
     }
   },
   currentMeteorVolume: (state) => {
@@ -152,15 +136,15 @@ const gameMeteorCollect = {
   createMeteor: (
     x = null,
     y = null,
-    radius = Math.max(gameMeteorCollect.meteorRadiusMax * Math.random(), gameMeteorCollect.meteorRadiusMin)
+    radius = global.rangeRand(game.meteorRadiusMin, game.meteorRadiusMax)
   ) => {
     const angle = Math.random() * global.tau
-    const speed = Math.min((1 / 800), Math.random() * (1 / 600))
-    const id = gameMeteorCollect.meteorCount += 1
+    const speed = global.rangeRand(game.asteroidMinSpeed, game.asteroidMaxSpeed)
+    const id = game.meteorLastId += 1
     if (x === null || y === null) {
-      const edgePostion = global.randomEdgePosition()
-      x = edgePostion.x
-      y = edgePostion.y
+      const edgePosition = global.randomEdgePosition()
+      x = edgePosition.x
+      y = edgePosition.y
     }
     return {
       id,
@@ -172,7 +156,7 @@ const gameMeteorCollect = {
       radius,
       angle,
       invincible: 100,
-      consumable: radius <= gameMeteorCollect.meteorRadiusConsumable
+      consumable: radius <= game.meteorRadiusConsumable
     }
   },
   splitMeteor: (state, meteor) => {
@@ -180,10 +164,10 @@ const gameMeteorCollect = {
     const y = meteor.y
     const radius = meteor.radius / 2
     state.meteors.push(
-      gameMeteorCollect.createMeteor(x, y, radius),
-      gameMeteorCollect.createMeteor(x, y, radius)
+      game.createMeteor(x, y, radius),
+      game.createMeteor(x, y, radius)
     )
   }
 }
 
-module.exports = gameMeteorCollect
+module.exports = game

@@ -1,7 +1,8 @@
 require('./game-globals')
 const EventEmitter = require('events')
 const gameMap = {
-  'meteor-collect': require('./game-meteor-collect.js')
+  'meteor-collect': require('./game-meteor-collect.js'),
+  'slurp': require('./game-slurp.js')
 }
 
 const manager = {
@@ -50,7 +51,7 @@ const manager = {
     )
     manager.state.events.on('start', manager.onGameStart)
     manager.state.events.on('end', manager.onGameEnd)
-    manager.activateGame('meteor-collect')
+    manager.activateGame('slurp')
   },
   activateGame: (gameName) => {
     manager.state.game = gameName
@@ -122,7 +123,7 @@ const manager = {
       console.error('Cheating! Someone is trying to become another connected player!')
     }
   },
-  createShip: (player, shipRadius) => {
+  createShip: (player) => {
     const placementRadius = 0.5
     const angle = Math.random() * Math.PI * 2
     return {

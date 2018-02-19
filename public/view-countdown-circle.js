@@ -12,10 +12,8 @@ window.countdownCircleComponent = {
       type: Number,
       required: true
     },
-    hue: {
-      type: Number,
-      default: 0
-    },
+    hue: Number,
+    hit: Boolean,
     label: {
       type: [String, Number],
       required: false
@@ -29,7 +27,7 @@ window.countdownCircleComponent = {
       required: false
     },
     id: {
-      type: String,
+      type: [String, Number],
       default: function () { return window.app.randomHash() }
     },
     ticks: {
@@ -39,7 +37,7 @@ window.countdownCircleComponent = {
   },
   computed: {
     color: function () {
-      return `color: hsl(${this.hue}, 100%, 50%);`
+      return this.hue !== undefined && this.hue !== null ? `color: hsl(${this.hue}, 100%, 50%);` : ''
     },
     lineId: function () {
       return 'line-' + this.id
@@ -67,6 +65,9 @@ window.countdownCircleComponent = {
   template: `
     <g
       class="countdown-circle"
+      :class="{
+        hit: hit
+      }"
       :transform="'translate(' + x + ', ' + y + ')'"
       :style="color"
     >
