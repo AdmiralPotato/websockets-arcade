@@ -1,4 +1,6 @@
 require('dotenv').config()
+const fs = require('fs')
+const morgan = require('morgan')
 const path = require('path')
 const express = require('express')
 const app = express()
@@ -11,6 +13,15 @@ const clientDependencyMap = {
   '/vue': 'node_modules/vue/dist',
   '/nipplejs': 'node_modules/nipplejs/dist'
 }
+
+// create a write stream (in append mode)
+const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), {flags: 'a'})
+
+// setup the logger
+app.use(morgan(
+  'combined',
+  {stream: accessLogStream}
+))
 
 app.use('/', express.static('public'))
 Object.keys(clientDependencyMap).forEach((key) => {
