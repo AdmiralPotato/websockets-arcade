@@ -21,7 +21,7 @@ window.shipComponent = {
       return transforms.join(',')
     },
     scoreDisplay: function () {
-      return this.score.toLocaleString()
+      return this.score ? this.score.toLocaleString() : ''
     }
   },
   template: `

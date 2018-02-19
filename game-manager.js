@@ -1,6 +1,7 @@
 require('./game-globals')
 const EventEmitter = require('events')
 const gameMap = {
+  'select': require('./game-select.js'),
   'meteor-collect': require('./game-meteor-collect.js'),
   'slurp': require('./game-slurp.js')
 }
@@ -51,9 +52,10 @@ const manager = {
     )
     manager.state.events.on('start', manager.onGameStart)
     manager.state.events.on('end', manager.onGameEnd)
-    manager.activateGame('slurp')
+    manager.activateGame('select')
   },
   activateGame: (gameName) => {
+    console.log('Activating Game:', gameName)
     manager.state.game = gameName
     manager.currentGame = gameMap[gameName]
     manager.currentGame.activate(manager.players, manager.state)
@@ -83,8 +85,9 @@ const manager = {
     // manager.initFakePlayersForTesting()
   },
   onGameEnd: (e) => {
-    console.log('manager.onGameEnd', e)
-    manager.currentGame.changeModeToIntro(manager.players, manager.state)
+    const nextGame = e || 'select'
+    console.log('manager.onGameEnd', {nextGame})
+    manager.activateGame(nextGame)
   },
   filterProps: [
     'xVel',

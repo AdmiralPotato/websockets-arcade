@@ -70,7 +70,7 @@ global.activityCircleDefaults = {
   tick: 0,
   ticksToActivate: 300
 }
-global.activityCircle = (config) => {
+global.createActivityCircle = (config) => {
   return Object.assign({}, global.activityCircleDefaults, config)
 }
 global.playersInCircle = (circle, players, state) => {
@@ -152,7 +152,7 @@ global.totalPlayerScores = (players, state) => {
   })
   state.scoreSnapshots = snapshots
 }
-global.durationScore = 15 * 100 // Score display time = 15s,
+global.durationScore = 10 * 100 // Score display time = 15s,
 global.durationScoreA = 0.95 * global.durationScore
 global.durationScoreB = 0.85 * global.durationScore
 global.durationScoreC = 0.45 * global.durationScore

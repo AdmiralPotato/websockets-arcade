@@ -1,12 +1,14 @@
 window.Vue.component('vector-text-defs', window.vectorTextDefsComponent)
 window.Vue.component('vector-text', window.vectorTextComponent)
 window.Vue.component('countdown-circle', window.countdownCircleComponent)
+window.Vue.component('star', window.starComponent)
 window.Vue.component('ship', window.shipComponent)
 window.Vue.component('meteor', window.meteorComponent)
 window.Vue.component('color-picker', window.colorPickerComponent)
 window.Vue.component('shape-defs', window.shapeDefsComponent)
 window.Vue.component('game-meteor-collect', window.gameMeteorCollectComponent)
 window.Vue.component('game-slurp', window.gameSlurpComponent)
+window.Vue.component('game-select', window.gameSelectComponent)
 window.Vue.component('main-view', window.mainViewComponent)
 
 window.app = {

@@ -4,6 +4,7 @@ window.shapeDefsComponent = {
       <vector-text-defs />
       <defs>
         <polygon id="ship" points="1,0 -1,-1 -0.5,0 -1,1" />
+        <path id="twinkle" d="M0.2,0.2L-0.2,-0.2Z M-0.2,0.2L0.2,-0.2Z M0.6,0L1,0Z M-0.6,0L-1,0Z M0,0.6L0,1Z M0,-0.6L0,-1Z" />
         <path
           id="petal"
           transform="translate(-1,-1)"

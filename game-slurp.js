@@ -24,7 +24,7 @@ const game = {
     const now = Date.now()
     state.mode = 'intro'
     state.timer = game.durationPlay
-    state.startCircle = global.activityCircle({y: 0.8})
+    state.startCircle = global.createActivityCircle({y: 0.8})
     game.populateInitialBubbles(state)
     state.ships.forEach(ship => {
       ship.score = 0
@@ -137,7 +137,7 @@ const game = {
       x = edgePosition.x
       y = edgePosition.y
     }
-    return global.activityCircle({
+    return global.createActivityCircle({
       id,
       x,
       y,
