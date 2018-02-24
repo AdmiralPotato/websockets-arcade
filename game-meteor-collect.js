@@ -99,6 +99,7 @@ const game = {
       if (hit) {
         ship.hit = ship.hit || hit
         meteor.expired = meteor.expired || hit
+        meteor.hue = ship.hue
         if (meteor.consumable) {
           ship.score += game.pointsCollect
         } else {
@@ -136,7 +137,8 @@ const game = {
   createMeteor: (
     x = null,
     y = null,
-    radius = global.rangeRand(game.meteorRadiusMin, game.meteorRadiusMax)
+    radius = global.rangeRand(game.meteorRadiusMin, game.meteorRadiusMax),
+    hue
   ) => {
     const angle = Math.random() * global.tau
     const speed = global.rangeRand(game.asteroidMinSpeed, game.asteroidMaxSpeed)
@@ -156,6 +158,7 @@ const game = {
       radius,
       angle,
       invincible: 100,
+      hue,
       consumable: radius <= game.meteorRadiusConsumable
     }
   },
@@ -164,8 +167,8 @@ const game = {
     const y = meteor.y
     const radius = meteor.radius / 2
     state.meteors.push(
-      game.createMeteor(x, y, radius),
-      game.createMeteor(x, y, radius)
+      game.createMeteor(x, y, radius, meteor.hue),
+      game.createMeteor(x, y, radius, meteor.hue)
     )
   }
 }

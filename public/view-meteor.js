@@ -8,9 +8,13 @@ window.meteorComponent = {
     angle: Number,
     radius: Number,
     invincible: Number,
+    hue: Number,
     consumable: Boolean
   },
   computed: {
+    color: function () {
+      return this.consumable && this.hue !== undefined && this.hue !== null ? `color: hsl(${this.hue}, 100%, 50%);` : ''
+    },
     transforms: function () {
       const transforms = [
         'translate(' + this.x + ', ' + this.y + ')',
@@ -39,7 +43,8 @@ window.meteorComponent = {
   template: `
       <g
         class="meteor"
-        :class="{hit: invincible, consumable}"
+        :class="{hit: invincible}"
+        :style="color"
         :transform="transforms"
       >
         <polygon :points="points"/>

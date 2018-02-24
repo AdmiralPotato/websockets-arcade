@@ -70,7 +70,7 @@ svg .countdown-tick {
   opacity: 0.5;
 }
 
-svg .ship.playerShip {
+svg .filled {
   fill: currentColor;
 }
 

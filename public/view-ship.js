@@ -28,7 +28,7 @@ window.shipComponent = {
       <g
         class="ship"
         :class="{
-          playerShip: isPlayer,
+          filled: isPlayer,
           hit: hit
         }"
         :transform="'translate(' + x + ', ' + y + ')'"

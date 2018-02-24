@@ -76,13 +76,13 @@ window.colorPickerComponent = {
             :style="getColorStyle(hue)"
             :transform="'rotate(' + hue + ')'"
             class="ship"
-            :class="{playerShip: hue === selectedHue}"
+            :class="{filled: hue === selectedHue}"
             @click="clickPetal(hue)"
             xlink:href="#petal"
           />
         </g>
         <g
-          class="ship playerShip"
+          class="ship filled"
           :transform="'scale(0.1) rotate(' + (localPlayer.angle || angle) + ')'"
           :style="getColorStyle(selectedHue)"
           @click="selectColor"
