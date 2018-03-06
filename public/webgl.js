@@ -173,6 +173,7 @@ const drawScene = () => {
   bindShapeBuffer(shapeBuffers.boundingShape)
   gl.drawArrays(gl.LINE_LOOP, 0, shapeBuffers.boundingShape.numItems)
   if (state.ships && state.ships.length) {
+    bindShapeBuffer(shapeBuffers.shipShape)
     state.ships.forEach((ship) => {
       window.mat4.identity(mat4transform)
       window.mat4.translate(
@@ -191,7 +192,6 @@ const drawScene = () => {
         window.vec3.fromValues(ship.radius, ship.radius, ship.radius)
       )
       gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4transform)
-      bindShapeBuffer(shapeBuffers.shipShape)
       gl.drawArrays(gl.TRIANGLES, 0, shapeBuffers.shipShape.numItems)
     })
   }
