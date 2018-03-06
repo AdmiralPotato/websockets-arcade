@@ -171,7 +171,7 @@ const drawScene = () => {
   window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
   gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4boundingTransform)
-  gl.uniform3fv(shaderProgram.u_color, [1, 1, 1])
+  gl.uniform3fv(shaderProgram.u_color, [0.75, 0.75, 0.75])
   bindShapeBuffer(shapeBuffers.boundingShape)
   gl.drawArrays(gl.LINE_LOOP, 0, shapeBuffers.boundingShape.numItems)
   if (state.ships && state.ships.length) {
