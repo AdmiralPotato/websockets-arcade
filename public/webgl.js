@@ -133,8 +133,9 @@ const initBuffers = async () => {
     -1, 1, 0,
     -0.5, 0, 0
   ]
-  shapeBuffers.boundingShape = makeBufferForVertList(boundingShape)
-  shapeBuffers.shipShape = makeBufferForVertList(shipShape)
+  shapeBuffers.boundingBox = makeBufferForVertList(boundingShape)
+  shapeBuffers.ship = makeBufferForVertList(shipShape)
+  shapeBuffers.circle = makeCircle(36)
   shapeBuffers.meteors = []
   for (let i = 0; i < 10; i++) {
     shapeBuffers.meteors.push(
@@ -148,9 +149,23 @@ const makeMeteor = () => {
   for (let i = 0; i < segments; i++) {
     const angle = (i / segments) * Math.PI * 2
     const radius = 0.75 + (Math.random() * 0.5)
-    const x = Math.cos(angle) * radius
-    const y = Math.sin(angle) * radius
-    points.push(x, y, 0)
+    points.push(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+      0
+    )
+  }
+  return makeBufferForVertList(points)
+}
+const makeCircle = (segments) => {
+  const points = []
+  for (let i = 0; i < segments; i++) {
+    const angle = (i / segments) * Math.PI * 2
+    points.push(
+      Math.cos(angle),
+      Math.sin(angle),
+      0
+    )
   }
   return makeBufferForVertList(points)
 }
@@ -188,35 +203,56 @@ const drawScene = () => {
   window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
   renderShapeBuffer({
-    shapeBuffer: shapeBuffers.boundingShape,
+    shapeBuffer: shapeBuffers.boundingBox,
     transform: mat4boundingTransform,
     color: baseColor,
     renderStyle: gl.LINE_LOOP
   })
   if (state.ships && state.ships.length) {
-    bindShapeBuffer(shapeBuffers.shipShape)
-    state.ships.forEach((ship) => {
-      makeTransformsForGameByObject(mat4transform, ship)
+    bindShapeBuffer(shapeBuffers.ship)
+    state.ships.forEach((item) => {
+      makeTransformsFromGameObject(mat4transform, item)
       renderShapeBuffer({
-        shapeBuffer: shapeBuffers.shipShape,
+        shapeBuffer: shapeBuffers.ship,
         transform: mat4transform,
-        color: hueToRgb(ship.hue)
+        color: hueToRgb(item.hue)
       })
     })
   }
   if (state.meteors && state.meteors.length) {
-    state.meteors.forEach((meteor) => {
-      makeTransformsForGameByObject(mat4transform, meteor)
+    state.meteors.forEach((item) => {
+      makeTransformsFromGameObject(mat4transform, item)
       renderShapeBuffer({
-        shapeBuffer: shapeBuffers.meteors[meteor.id % shapeBuffers.meteors.length],
+        shapeBuffer: shapeBuffers.meteors[item.id % shapeBuffers.meteors.length],
         transform: mat4transform,
-        color: meteor.consumable ? consumableColor : baseColor,
+        color: item.consumable ? consumableColor : baseColor,
+        renderStyle: gl.LINE_LOOP
+      })
+    })
+  }
+  let circles = []
+  if (state.startCircle) {
+    circles.push(state.startCircle)
+  }
+  if (state.startCircles) {
+    circles = circles.concat(state.startCircles)
+  }
+  if (state.bubbles) {
+    circles = circles.concat(state.bubbles)
+  }
+  if (circles.length) {
+    circles.forEach((item) => {
+      makeTransformsFromGameObject(mat4transform, item)
+      renderShapeBuffer({
+        shapeBuffer: shapeBuffers.circle,
+        transform: mat4transform,
+        color: item.hue !== null ? hueToRgb(item.hue) : baseColor,
         renderStyle: gl.LINE_LOOP
       })
     })
   }
 }
-const makeTransformsForGameByObject = (
+const makeTransformsFromGameObject = (
   outMatrix = window.mat4.create(),
   gameObject
 ) => {
@@ -226,11 +262,13 @@ const makeTransformsForGameByObject = (
     outMatrix,
     window.vec3.fromValues(gameObject.x, -gameObject.y, 0)
   )
-  window.mat4.rotateZ(
-    outMatrix,
-    outMatrix,
-    -gameObject.angle
-  )
+  if (gameObject.angle) {
+    window.mat4.rotateZ(
+      outMatrix,
+      outMatrix,
+      -gameObject.angle
+    )
+  }
   window.mat4.scale(
     outMatrix,
     outMatrix,

@@ -65,6 +65,7 @@ const game = {
         true
       )
       if (startGame) {
+        delete state.startCircles
         state.events.emit('end', item.id)
       }
     })
