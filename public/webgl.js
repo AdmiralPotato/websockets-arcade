@@ -135,6 +135,24 @@ const initBuffers = async () => {
   ]
   shapeBuffers.boundingShape = makeBufferForVertList(boundingShape)
   shapeBuffers.shipShape = makeBufferForVertList(shipShape)
+  shapeBuffers.meteors = []
+  for (let i = 0; i < 10; i++) {
+    shapeBuffers.meteors.push(
+      makeMeteor()
+    )
+  }
+}
+const makeMeteor = () => {
+  const points = []
+  const segments = 10 + Math.round(Math.random() * 5)
+  for (let i = 0; i < segments; i++) {
+    const angle = (i / segments) * Math.PI * 2
+    const radius = 0.75 + (Math.random() * 0.5)
+    const x = Math.cos(angle) * radius
+    const y = Math.sin(angle) * radius
+    points.push(x, y, 0)
+  }
+  return makeBufferForVertList(points)
 }
 const makeBufferForVertList = (vertList) => {
   const elementsPerVert = 3
@@ -143,9 +161,6 @@ const makeBufferForVertList = (vertList) => {
   const positionArray = new Float32Array(vertList)
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
   gl.bufferData(gl.ARRAY_BUFFER, positionArray, gl.STATIC_DRAW)
-  vertList.forEach((vertexComponent, i) => {
-    positionArray[i] = vertexComponent
-  })
   buffer.itemSize = elementsPerVert
   buffer.numItems = numVerts
   return buffer
@@ -154,6 +169,8 @@ const mat4boundingTransform = window.mat4.create()
 const mat4perspectiveTransform = window.mat4.create()
 const mat4perspective = window.mat4.create()
 const mat4transform = window.mat4.create()
+const baseColor = [0.75, 0.75, 0.75]
+const consumableColor = [0.25, 0.75, 0.25]
 const drawScene = () => {
   gl.viewport(0, 0, canvas.width, canvas.height)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -170,34 +187,72 @@ const drawScene = () => {
   )
   window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
-  gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4boundingTransform)
-  gl.uniform3fv(shaderProgram.u_color, [0.75, 0.75, 0.75])
-  bindShapeBuffer(shapeBuffers.boundingShape)
-  gl.drawArrays(gl.LINE_LOOP, 0, shapeBuffers.boundingShape.numItems)
+  renderShapeBuffer({
+    shapeBuffer: shapeBuffers.boundingShape,
+    transform: mat4boundingTransform,
+    color: baseColor,
+    renderStyle: gl.LINE_LOOP
+  })
   if (state.ships && state.ships.length) {
     bindShapeBuffer(shapeBuffers.shipShape)
     state.ships.forEach((ship) => {
-      window.mat4.identity(mat4transform)
-      window.mat4.translate(
-        mat4transform,
-        mat4transform,
-        window.vec3.fromValues(ship.x, -ship.y, 0)
-      )
-      window.mat4.rotateZ(
-        mat4transform,
-        mat4transform,
-        -ship.angle
-      )
-      window.mat4.scale(
-        mat4transform,
-        mat4transform,
-        window.vec3.fromValues(ship.radius, ship.radius, ship.radius)
-      )
-      gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4transform)
-      gl.uniform3fv(shaderProgram.u_color, hueToRgb(ship.hue))
-      gl.drawArrays(gl.TRIANGLES, 0, shapeBuffers.shipShape.numItems)
+      makeTransformsForGameByObject(mat4transform, ship)
+      renderShapeBuffer({
+        shapeBuffer: shapeBuffers.shipShape,
+        transform: mat4transform,
+        color: hueToRgb(ship.hue)
+      })
     })
   }
+  if (state.meteors && state.meteors.length) {
+    state.meteors.forEach((meteor) => {
+      makeTransformsForGameByObject(mat4transform, meteor)
+      renderShapeBuffer({
+        shapeBuffer: shapeBuffers.meteors[meteor.id % shapeBuffers.meteors.length],
+        transform: mat4transform,
+        color: meteor.consumable ? consumableColor : baseColor,
+        renderStyle: gl.LINE_LOOP
+      })
+    })
+  }
+}
+const makeTransformsForGameByObject = (
+  outMatrix = window.mat4.create(),
+  gameObject
+) => {
+  window.mat4.identity(outMatrix)
+  window.mat4.translate(
+    outMatrix,
+    outMatrix,
+    window.vec3.fromValues(gameObject.x, -gameObject.y, 0)
+  )
+  window.mat4.rotateZ(
+    outMatrix,
+    outMatrix,
+    -gameObject.angle
+  )
+  window.mat4.scale(
+    outMatrix,
+    outMatrix,
+    window.vec3.fromValues(gameObject.radius, gameObject.radius, gameObject.radius)
+  )
+  return outMatrix
+}
+const renderShapeBuffer = (config) => {
+  gl.uniformMatrix4fv(
+    shaderProgram.u_mat4transform,
+    false,
+    config.transform || window.mat4.identity()
+  )
+  gl.uniform3fv(shaderProgram.u_color, config.color || [1, 1, 1])
+  if (config.shapeBuffer) {
+    bindShapeBuffer(config.shapeBuffer)
+  }
+  gl.drawArrays(
+    config.renderStyle || gl.TRIANGLES,
+    0,
+    config.shapeBuffer.numItems
+  )
 }
 const cachedHueMap = {}
 const hueToRgb = (hue) => {
@@ -205,16 +260,20 @@ const hueToRgb = (hue) => {
   cachedHueMap[hue] = result
   return result
 }
+let lastBoundShapeBuffer
 const bindShapeBuffer = (shapeBuffer) => {
-  gl.bindBuffer(gl.ARRAY_BUFFER, shapeBuffer)
-  gl.vertexAttribPointer(
-    shaderProgram.a_vec3position,
-    shapeBuffer.itemSize,
-    gl.FLOAT,
-    false,
-    0,
-    0
-  )
+  if (lastBoundShapeBuffer !== shapeBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, shapeBuffer)
+    gl.vertexAttribPointer(
+      shaderProgram.a_vec3position,
+      shapeBuffer.itemSize,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    )
+  }
+  lastBoundShapeBuffer = shapeBuffer
 }
 
 canvas.addEventListener(
