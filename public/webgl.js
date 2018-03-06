@@ -86,6 +86,7 @@ const initShaders = async () => {
   gl.enableVertexAttribArray(shaderProgram.a_vec3position)
   shaderProgram.u_mat4transform = gl.getUniformLocation(shaderProgram, 'u_mat4transform')
   shaderProgram.u_mat4perspective = gl.getUniformLocation(shaderProgram, 'u_mat4perspective')
+  shaderProgram.u_color = gl.getUniformLocation(shaderProgram, 'u_color')
 }
 const getAssetText = (path) => {
   let succeed, fail
@@ -170,6 +171,7 @@ const drawScene = () => {
   window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
   gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4boundingTransform)
+  gl.uniform3fv(shaderProgram.u_color, [1, 1, 1])
   bindShapeBuffer(shapeBuffers.boundingShape)
   gl.drawArrays(gl.LINE_LOOP, 0, shapeBuffers.boundingShape.numItems)
   if (state.ships && state.ships.length) {
@@ -192,9 +194,16 @@ const drawScene = () => {
         window.vec3.fromValues(ship.radius, ship.radius, ship.radius)
       )
       gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4transform)
+      gl.uniform3fv(shaderProgram.u_color, hueToRgb(ship.hue))
       gl.drawArrays(gl.TRIANGLES, 0, shapeBuffers.shipShape.numItems)
     })
   }
+}
+const cachedHueMap = {}
+const hueToRgb = (hue) => {
+  const result = cachedHueMap[hue] || hsl2rgb([hue, 100, 50])
+  cachedHueMap[hue] = result
+  return result
 }
 const bindShapeBuffer = (shapeBuffer) => {
   gl.bindBuffer(gl.ARRAY_BUFFER, shapeBuffer)
@@ -246,3 +255,52 @@ socket.on('state', function (data) {
   }
   state = data
 })
+
+const hsl2rgb = function (hsl) {
+  let h = hsl[0] / 360
+  let s = hsl[1] / 100
+  let l = hsl[2] / 100
+  let t1
+  let t2
+  let t3
+  let rgb
+  let val
+
+  if (s === 0) {
+    val = l * 255
+    return [val, val, val]
+  }
+
+  if (l < 0.5) {
+    t2 = l * (1 + s)
+  } else {
+    t2 = l + s - l * s
+  }
+
+  t1 = 2 * l - t2
+
+  rgb = [0, 0, 0]
+  for (let i = 0; i < 3; i++) {
+    t3 = h + 1 / 3 * -(i - 1)
+    if (t3 < 0) {
+      t3++
+    }
+    if (t3 > 1) {
+      t3--
+    }
+
+    if (6 * t3 < 1) {
+      val = t1 + (t2 - t1) * 6 * t3
+    } else if (2 * t3 < 1) {
+      val = t2
+    } else if (3 * t3 < 2) {
+      val = t1 + (t2 - t1) * (2 / 3 - t3) * 6
+    } else {
+      val = t1
+    }
+
+    rgb[i] = val
+  }
+
+  return rgb
+}
