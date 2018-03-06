@@ -66,6 +66,7 @@ const game = {
       )
       if (startGame) {
         delete state.startCircles
+        delete state.stars
         state.events.emit('end', item.id)
       }
     })

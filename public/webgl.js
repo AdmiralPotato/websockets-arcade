@@ -185,6 +185,7 @@ const mat4perspectiveTransform = window.mat4.create()
 const mat4perspective = window.mat4.create()
 const mat4transform = window.mat4.create()
 const baseColor = [0.75, 0.75, 0.75]
+const starColor = [0.125, 0.125, 0.125]
 const consumableColor = [0.25, 0.75, 0.25]
 const drawScene = () => {
   gl.viewport(0, 0, canvas.width, canvas.height)
@@ -247,6 +248,17 @@ const drawScene = () => {
         shapeBuffer: shapeBuffers.circle,
         transform: mat4transform,
         color: item.hue !== null ? hueToRgb(item.hue) : baseColor,
+        renderStyle: gl.LINE_LOOP
+      })
+    })
+  }
+  if (state.stars) {
+    state.stars.forEach((item) => {
+      makeTransformsFromGameObject(mat4transform, item)
+      renderShapeBuffer({
+        shapeBuffer: shapeBuffers.circle,
+        transform: mat4transform,
+        color: starColor,
         renderStyle: gl.LINE_LOOP
       })
     })
