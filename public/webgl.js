@@ -6,21 +6,27 @@ let state = {}
 let lastPixelScale
 let lastBoundingRect
 let animationFrameRequestId
+let lastSceneState
 const loop = (time) => {
   animationFrameRequestId = window.requestAnimationFrame(loop)
-  detectNeedForResize()
-  drawScene()
+  const sceneState = JSON.stringify(state)
+  const needsResize = detectNeedForResize()
+  if (lastSceneState !== sceneState || needsResize) {
+    drawScene()
+    lastSceneState = sceneState
+  }
 }
 const detectNeedForResize = () => {
   const pixelScale = window.devicePixelRatio || 1
   const boundingRect = canvas.parentNode.getBoundingClientRect()
-  if (
+  const needsResize = (
     !lastPixelScale ||
     lastPixelScale !== pixelScale ||
     !lastBoundingRect ||
     lastBoundingRect.width !== boundingRect.width ||
     lastBoundingRect.height !== boundingRect.height
-  ) {
+  )
+  if (needsResize) {
     resize(
       boundingRect.width * pixelScale,
       boundingRect.height * pixelScale
@@ -28,12 +34,12 @@ const detectNeedForResize = () => {
     lastPixelScale = pixelScale
     lastBoundingRect = boundingRect
   }
+  return needsResize
 }
 const resize = (width, height) => {
   console.log('resize:', {width, height})
   canvas.width = width
   canvas.height = height
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
 }
 const initResources = async () => {
   await Promise.all([
@@ -45,6 +51,7 @@ const initResources = async () => {
   loop(window.performance.now())
 }
 let shaderSourcesPromise
+let shaderProgram
 const initShaders = async () => {
   // const vertexShader = createShader(gl)
   const sourcesMap = {
@@ -67,6 +74,18 @@ const initShaders = async () => {
     shaders[key] = createShader(gl, result, type)
   })
   console.log('initShaders: Complete', {shaderSources, shaders})
+  shaderProgram = gl.createProgram()
+  gl.attachShader(shaderProgram, shaders.vertex)
+  gl.attachShader(shaderProgram, shaders.fragment)
+  gl.linkProgram(shaderProgram)
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert('Could not initialise shaders')
+  }
+  gl.useProgram(shaderProgram)
+  shaderProgram.a_vec3position = gl.getAttribLocation(shaderProgram, 'a_vec3position')
+  gl.enableVertexAttribArray(shaderProgram.a_vec3position)
+  shaderProgram.u_mat4transform = gl.getUniformLocation(shaderProgram, 'u_mat4transform')
+  shaderProgram.u_mat4perspective = gl.getUniformLocation(shaderProgram, 'u_mat4perspective')
 }
 const getAssetText = (path) => {
   let succeed, fail
@@ -97,35 +116,97 @@ const createShader = (gl, sourceCode, type) => {
   }
   return shader
 }
+let shapeBuffers = {}
 const initBuffers = async () => {
-  const shipShape = [
-    1, 0, 0,
+  const boundingShape = [
     -1, -1, 0,
+    1, -1, 0,
+    1, 1, 0,
     -1, 1, 0
   ]
-  const shipShapeBuffer = makeBufferForVertList(shipShape)
+  const shipShape = [
+    -0.5, 0, 0,
+    -1, -1, 0,
+    1, 0, 0,
+    1, 0, 0,
+    -1, 1, 0,
+    -0.5, 0, 0
+  ]
+  shapeBuffers.boundingShape = makeBufferForVertList(boundingShape)
+  shapeBuffers.shipShape = makeBufferForVertList(shipShape)
 }
 const makeBufferForVertList = (vertList) => {
   const elementsPerVert = 3
-  const numVerts = vertList / elementsPerVert
-  const vertexSize = elementsPerVert * Float32Array.BYTES_PER_ELEMENT
-  const buffer = new ArrayBuffer(numVerts * vertexSize)
+  const numVerts = vertList.length / elementsPerVert
+  const buffer = gl.createBuffer()
   const positionArray = new Float32Array(vertList)
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
   gl.bufferData(gl.ARRAY_BUFFER, positionArray, gl.STATIC_DRAW)
   vertList.forEach((vertexComponent, i) => {
     positionArray[i] = vertexComponent
   })
-  return positionArray
+  buffer.itemSize = elementsPerVert
+  buffer.numItems = numVerts
+  return buffer
 }
+const mat4boundingTransform = window.mat4.create()
+const mat4perspectiveTransform = window.mat4.create()
+const mat4perspective = window.mat4.create()
+const mat4transform = window.mat4.create()
 const drawScene = () => {
-  gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
-  gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-  setMatrixUniforms();
-  gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
-
+  gl.viewport(0, 0, canvas.width, canvas.height)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  window.mat4.perspective(
+    mat4perspective,
+    Math.PI / 8,
+    canvas.width / canvas.height,
+    1000,
+    0.1
+  )
+  window.mat4.fromTranslation(
+    mat4perspectiveTransform,
+    window.vec3.fromValues(0, 0, -10)
+  )
+  window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
+  gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
+  gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4boundingTransform)
+  bindShapeBuffer(shapeBuffers.boundingShape)
+  gl.drawArrays(gl.LINE_LOOP, 0, shapeBuffers.boundingShape.numItems)
+  if (state.ships && state.ships.length) {
+    state.ships.forEach((ship) => {
+      window.mat4.identity(mat4transform)
+      window.mat4.translate(
+        mat4transform,
+        mat4transform,
+        window.vec3.fromValues(ship.x, -ship.y, 0)
+      )
+      window.mat4.rotateZ(
+        mat4transform,
+        mat4transform,
+        -ship.angle
+      )
+      window.mat4.scale(
+        mat4transform,
+        mat4transform,
+        window.vec3.fromValues(ship.radius, ship.radius, ship.radius)
+      )
+      gl.uniformMatrix4fv(shaderProgram.u_mat4transform, false, mat4transform)
+      bindShapeBuffer(shapeBuffers.shipShape)
+      gl.drawArrays(gl.TRIANGLES, 0, shapeBuffers.shipShape.numItems)
+    })
+  }
 }
-
+const bindShapeBuffer = (shapeBuffer) => {
+  gl.bindBuffer(gl.ARRAY_BUFFER, shapeBuffer)
+  gl.vertexAttribPointer(
+    shaderProgram.a_vec3position,
+    shapeBuffer.itemSize,
+    gl.FLOAT,
+    false,
+    0,
+    0
+  )
+}
 
 canvas.addEventListener(
   'webglcontextcreationerror',
