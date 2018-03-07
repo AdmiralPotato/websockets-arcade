@@ -1,7 +1,13 @@
 const socket = window.io.connect('//')
 const appTargetElement = document.getElementById('appTarget')
 const canvas = document.createElement('canvas')
-const gl = canvas.getContext('webgl')
+let gl = canvas.getContext('webgl')
+if (!gl) {
+  gl = canvas.getContext('experimental-webgl')
+}
+if (!gl) {
+  alert('Sorry, your browser cannot WebGL.')
+}
 let state = {}
 let lastPixelScale
 let lastBoundingRect
