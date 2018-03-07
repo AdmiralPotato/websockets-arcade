@@ -196,16 +196,19 @@ const consumableColor = [0.25, 0.75, 0.25]
 const drawScene = () => {
   gl.viewport(0, 0, canvas.width, canvas.height)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  const aspect = canvas.width / canvas.height
+  const desiredMinimumFov = Math.PI / 2
+  const fovY = aspect >= 1 ? desiredMinimumFov : 2 * Math.atan(Math.tan(desiredMinimumFov / 2) / aspect)
   window.mat4.perspective(
     mat4perspective,
-    Math.PI / 8,
-    canvas.width / canvas.height,
+    fovY,
+    aspect,
     1000,
     0.1
   )
   window.mat4.fromTranslation(
     mat4perspectiveTransform,
-    window.vec3.fromValues(0, 0, -10)
+    window.vec3.fromValues(0, 0, -1)
   )
   window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
