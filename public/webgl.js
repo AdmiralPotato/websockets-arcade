@@ -8,45 +8,6 @@ if (!gl) {
 if (!gl) {
   alert('Sorry, your browser cannot WebGL.')
 }
-let state = {}
-let lastPixelScale
-let lastBoundingRect
-let animationFrameRequestId
-let lastSceneState
-const loop = (time) => {
-  animationFrameRequestId = window.requestAnimationFrame(loop)
-  const sceneState = JSON.stringify(state)
-  const needsResize = detectNeedForResize()
-  if (lastSceneState !== sceneState || needsResize) {
-    drawScene()
-    lastSceneState = sceneState
-  }
-}
-const detectNeedForResize = () => {
-  const pixelScale = window.devicePixelRatio || 1
-  const boundingRect = canvas.parentNode.getBoundingClientRect()
-  const needsResize = (
-    !lastPixelScale ||
-    lastPixelScale !== pixelScale ||
-    !lastBoundingRect ||
-    lastBoundingRect.width !== boundingRect.width ||
-    lastBoundingRect.height !== boundingRect.height
-  )
-  if (needsResize) {
-    resize(
-      boundingRect.width * pixelScale,
-      boundingRect.height * pixelScale
-    )
-    lastPixelScale = pixelScale
-    lastBoundingRect = boundingRect
-  }
-  return needsResize
-}
-const resize = (width, height) => {
-  console.log('resize:', {width, height})
-  canvas.width = width
-  canvas.height = height
-}
 const initResources = async () => {
   await Promise.all([
     initShaders(),
@@ -186,19 +147,49 @@ const makeBufferForVertList = (vertList) => {
   buffer.numItems = numVerts
   return buffer
 }
-const mat4boundingTransform = window.mat4.create()
-const mat4perspectiveTransform = window.mat4.create()
+let state = {}
+let lastPixelScale
+let lastBoundingRect
+let animationFrameRequestId
+let lastSceneState
+const loop = (time) => {
+  animationFrameRequestId = window.requestAnimationFrame(loop)
+  const sceneState = JSON.stringify(state)
+  const needsResize = detectNeedForResize()
+  if (lastSceneState !== sceneState || needsResize) {
+    drawScene()
+    lastSceneState = sceneState
+  }
+}
+const detectNeedForResize = () => {
+  const pixelScale = window.devicePixelRatio || 1
+  const boundingRect = appTargetElement.getBoundingClientRect()
+  const needsResize = (
+    !lastPixelScale ||
+    lastPixelScale !== pixelScale ||
+    !lastBoundingRect ||
+    lastBoundingRect.width !== boundingRect.width ||
+    lastBoundingRect.height !== boundingRect.height
+  )
+  if (needsResize) {
+    resize(
+      boundingRect.width * pixelScale,
+      boundingRect.height * pixelScale
+    )
+    lastPixelScale = pixelScale
+    lastBoundingRect = boundingRect
+  }
+  return needsResize
+}
 const mat4perspective = window.mat4.create()
-const mat4transform = window.mat4.create()
-const baseColor = [0.75, 0.75, 0.75]
-const starColor = [0.125, 0.125, 0.125]
-const consumableColor = [0.25, 0.75, 0.25]
-const drawScene = () => {
-  gl.viewport(0, 0, canvas.width, canvas.height)
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-  const aspect = canvas.width / canvas.height
+const resize = (width, height) => {
+  const aspect = width / height
   const desiredMinimumFov = Math.PI / 2
   const fovY = aspect >= 1 ? desiredMinimumFov : 2 * Math.atan(Math.tan(desiredMinimumFov / 2) / aspect)
+  console.log('resize:', {width, height})
+  canvas.width = width
+  canvas.height = height
+  gl.viewport(0, 0, width, height)
   window.mat4.perspective(
     mat4perspective,
     fovY,
@@ -206,11 +197,19 @@ const drawScene = () => {
     1000,
     0.1
   )
-  window.mat4.fromTranslation(
-    mat4perspectiveTransform,
-    window.vec3.fromValues(0, 0, -1)
-  )
   window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
+}
+const mat4boundingTransform = window.mat4.create()
+const mat4perspectiveTransform = window.mat4.fromTranslation(
+  window.mat4.create(),
+  window.vec3.fromValues(0, 0, -1)
+)
+const mat4transform = window.mat4.create()
+const baseColor = [0.75, 0.75, 0.75]
+const starColor = [0.125, 0.125, 0.125]
+const consumableColor = [0.25, 0.75, 0.25]
+const drawScene = () => {
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
   renderShapeBuffer({
     shapeBuffer: shapeBuffers.boundingBox,
