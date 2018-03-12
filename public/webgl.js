@@ -13,7 +13,7 @@ const initResources = async () => {
     initShaders(),
     initBuffers()
   ])
-  gl.clearColor(0.0, 0.0, 0.0, 1.0)
+  gl.clearColor(0.0, 0.0, 0.0, 0.0)
   gl.enable(gl.DEPTH_TEST)
   loop(window.performance.now())
 }
@@ -55,22 +55,9 @@ const initShaders = async () => {
   shaderProgram.u_mat4perspective = gl.getUniformLocation(shaderProgram, 'u_mat4perspective')
   shaderProgram.u_color = gl.getUniformLocation(shaderProgram, 'u_color')
 }
-const getAssetText = (path) => {
-  let succeed, fail
-  const promise = new Promise((resolve, reject) => {
-    succeed = resolve
-    fail = reject
-  })
-  const request = new XMLHttpRequest()
-  request.open('GET', path, true)
-  request.addEventListener('load', () => {
-    succeed(request.responseText)
-  })
-  request.addEventListener('error', () => {
-    fail(request.responseText)
-  })
-  request.send()
-  return promise
+const getAssetText = async (path) => {
+  const fetchPromise = await fetch(path)
+  return fetchPromise.text()
 }
 const createShader = (gl, sourceCode, type) => {
   // Compiles either a shader of type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
@@ -85,6 +72,7 @@ const createShader = (gl, sourceCode, type) => {
   return shader
 }
 let shapeBuffers = {}
+let arrayBuffers = {}
 const initBuffers = async () => {
   const boundingShape = [
     -1, -1, 0,
@@ -92,23 +80,20 @@ const initBuffers = async () => {
     1, 1, 0,
     -1, 1, 0
   ]
-  const shipShape = [
-    -0.5, 0, 0,
-    -1, -1, 0,
-    1, 0, 0,
-    1, 0, 0,
-    -1, 1, 0,
-    -0.5, 0, 0
-  ]
-  shapeBuffers.boundingBox = makeBufferForVertList(boundingShape)
-  shapeBuffers.ship = makeBufferForVertList(shipShape)
-  shapeBuffers.circle = makeCircle(36)
-  shapeBuffers.meteors = []
+  arrayBuffers.boundingBox = makeArrayBufferForVertList(boundingShape)
+  arrayBuffers.circle = makeCircle(36)
+  arrayBuffers.meteors = []
   for (let i = 0; i < 10; i++) {
-    shapeBuffers.meteors.push(
+    arrayBuffers.meteors.push(
       makeMeteor()
     )
   }
+  shapeBuffers = await window.gltfLoader(gl, '/webgl-models-split.gltf')
+  shapeBuffers.meteors = [
+    shapeBuffers.meteor_0,
+    shapeBuffers.meteor_1,
+    shapeBuffers.meteor_2
+  ]
 }
 const makeMeteor = () => {
   const points = []
@@ -122,7 +107,7 @@ const makeMeteor = () => {
       0
     )
   }
-  return makeBufferForVertList(points)
+  return makeArrayBufferForVertList(points)
 }
 const makeCircle = (segments) => {
   const points = []
@@ -134,17 +119,27 @@ const makeCircle = (segments) => {
       0
     )
   }
-  return makeBufferForVertList(points)
+  return makeArrayBufferForVertList(points)
 }
-const makeBufferForVertList = (vertList) => {
+const makeArrayBufferForVertList = (vertList) => {
   const elementsPerVert = 3
-  const numVerts = vertList.length / elementsPerVert
+  return makeBufferForTypedArray({
+    count: vertList.length / elementsPerVert,
+    data: new Float32Array(vertList),
+    type: 'VEC3',
+    elements: elementsPerVert,
+    glTargetName: 'ARRAY_BUFFER',
+    glTarget: gl['ARRAY_BUFFER']
+  })
+}
+const makeBufferForTypedArray = (config) => {
   const buffer = gl.createBuffer()
-  const positionArray = new Float32Array(vertList)
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-  gl.bufferData(gl.ARRAY_BUFFER, positionArray, gl.STATIC_DRAW)
-  buffer.itemSize = elementsPerVert
-  buffer.numItems = numVerts
+  gl.bindBuffer(config.glTarget, buffer)
+  gl.bufferData(config.glTarget, config.data, gl.STATIC_DRAW)
+  buffer.elements = config.elements
+  buffer.numItems = config.count
+  buffer.glTarget = config.glTarget
+  buffer.glTargetName = config.glTargetName
   return buffer
 }
 let state = {}
@@ -206,23 +201,22 @@ const mat4perspectiveTransform = window.mat4.fromTranslation(
 )
 const mat4transform = window.mat4.create()
 const baseColor = [0.75, 0.75, 0.75]
-const starColor = [0.125, 0.125, 0.125]
+const starColor = [0.25, 0.25, 0.25]
 const consumableColor = [0.25, 0.75, 0.25]
 const drawScene = () => {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
-  renderShapeBuffer({
-    shapeBuffer: shapeBuffers.boundingBox,
+  renderArrayBuffer({
+    arrayBuffer: arrayBuffers.boundingBox,
     transform: mat4boundingTransform,
     color: baseColor,
     renderStyle: gl.LINE_LOOP
   })
   if (state.ships && state.ships.length) {
-    bindShapeBuffer(shapeBuffers.ship)
     state.ships.forEach((item) => {
       makeTransformsFromGameObject(mat4transform, item)
       renderShapeBuffer({
-        shapeBuffer: shapeBuffers.ship,
+        shapeBuffer: shapeBuffers.player,
         transform: mat4transform,
         color: hueToRgb(item.hue)
       })
@@ -234,8 +228,7 @@ const drawScene = () => {
       renderShapeBuffer({
         shapeBuffer: shapeBuffers.meteors[item.id % shapeBuffers.meteors.length],
         transform: mat4transform,
-        color: item.consumable ? consumableColor : baseColor,
-        renderStyle: gl.LINE_LOOP
+        color: item.consumable ? consumableColor : baseColor
       })
     })
   }
@@ -252,8 +245,8 @@ const drawScene = () => {
   if (circles.length) {
     circles.forEach((item) => {
       makeTransformsFromGameObject(mat4transform, item)
-      renderShapeBuffer({
-        shapeBuffer: shapeBuffers.circle,
+      renderArrayBuffer({
+        arrayBuffer: arrayBuffers.circle,
         transform: mat4transform,
         color: item.hue !== null ? hueToRgb(item.hue) : baseColor,
         renderStyle: gl.LINE_LOOP
@@ -264,10 +257,9 @@ const drawScene = () => {
     state.stars.forEach((item) => {
       makeTransformsFromGameObject(mat4transform, item)
       renderShapeBuffer({
-        shapeBuffer: shapeBuffers.circle,
+        shapeBuffer: shapeBuffers.star,
         transform: mat4transform,
-        color: starColor,
-        renderStyle: gl.LINE_LOOP
+        color: starColor
       })
     })
   }
@@ -296,6 +288,12 @@ const makeTransformsFromGameObject = (
   )
   return outMatrix
 }
+const cachedHueMap = {}
+const hueToRgb = (hue) => {
+  const result = cachedHueMap[hue] || hsl2rgb([hue, 100, 50])
+  cachedHueMap[hue] = result
+  return result
+}
 const renderShapeBuffer = (config) => {
   gl.uniformMatrix4fv(
     shaderProgram.u_mat4transform,
@@ -303,35 +301,62 @@ const renderShapeBuffer = (config) => {
     config.transform || window.mat4.identity()
   )
   gl.uniform3fv(shaderProgram.u_color, config.color || [1, 1, 1])
-  if (config.shapeBuffer) {
-    bindShapeBuffer(config.shapeBuffer)
-  }
+  bindShapeBuffer(config.shapeBuffer)
+  gl.drawElements(
+    config.renderStyle || gl.TRIANGLES,
+    config.shapeBuffer.indices.count,
+    config.shapeBuffer.indices.glType,
+    0
+  )
+}
+const bindShapeBuffer = (shapeBuffer) => {
+  const indices = shapeBuffer.indices
+  const position = shapeBuffer.POSITION
+  gl.bindBuffer(
+    position.glTarget,
+    position
+  )
+  gl.vertexAttribPointer(
+    shaderProgram.a_vec3position,
+    position.elements,
+    position.glType,
+    false,
+    0,
+    0
+  )
+  gl.bindBuffer(
+    indices.glTarget,
+    indices
+  )
+}
+
+const renderArrayBuffer = (config) => {
+  gl.uniformMatrix4fv(
+    shaderProgram.u_mat4transform,
+    false,
+    config.transform || window.mat4.identity()
+  )
+  gl.uniform3fv(shaderProgram.u_color, config.color || [1, 1, 1])
+  bindArrayBuffer(config.arrayBuffer)
   gl.drawArrays(
     config.renderStyle || gl.TRIANGLES,
     0,
-    config.shapeBuffer.numItems
+    config.arrayBuffer.numItems
   )
 }
-const cachedHueMap = {}
-const hueToRgb = (hue) => {
-  const result = cachedHueMap[hue] || hsl2rgb([hue, 100, 50])
-  cachedHueMap[hue] = result
-  return result
-}
-let lastBoundShapeBuffer
-const bindShapeBuffer = (shapeBuffer) => {
-  if (lastBoundShapeBuffer !== shapeBuffer) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, shapeBuffer)
-    gl.vertexAttribPointer(
-      shaderProgram.a_vec3position,
-      shapeBuffer.itemSize,
-      gl.FLOAT,
-      false,
-      0,
-      0
-    )
-  }
-  lastBoundShapeBuffer = shapeBuffer
+const bindArrayBuffer = (arrayBuffer) => {
+  gl.bindBuffer(
+    arrayBuffer.glTarget,
+    arrayBuffer
+  )
+  gl.vertexAttribPointer(
+    shaderProgram.a_vec3position,
+    arrayBuffer.elements,
+    gl.FLOAT,
+    false,
+    0,
+    0
+  )
 }
 
 canvas.addEventListener(
