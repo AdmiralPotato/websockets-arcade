@@ -14,7 +14,10 @@ const initResources = async () => {
     initBuffers()
   ])
   gl.clearColor(0.0, 0.0, 0.0, 0.0)
-  gl.enable(gl.DEPTH_TEST)
+  gl.disable(gl.DEPTH_TEST)
+  gl.enable(gl.BLEND)
+  gl.blendEquation(gl.FUNC_ADD)
+  gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
   loop(window.performance.now())
 }
 let shaderSourcesPromise
@@ -51,6 +54,8 @@ const initShaders = async () => {
   gl.useProgram(shaderProgram)
   shaderProgram.a_vec3position = gl.getAttribLocation(shaderProgram, 'a_vec3position')
   gl.enableVertexAttribArray(shaderProgram.a_vec3position)
+  shaderProgram.a_vec3normal = gl.getAttribLocation(shaderProgram, 'a_vec3normal')
+  gl.enableVertexAttribArray(shaderProgram.a_vec3normal)
   shaderProgram.u_mat4transform = gl.getUniformLocation(shaderProgram, 'u_mat4transform')
   shaderProgram.u_mat4perspective = gl.getUniformLocation(shaderProgram, 'u_mat4perspective')
   shaderProgram.u_color = gl.getUniformLocation(shaderProgram, 'u_color')
@@ -189,8 +194,8 @@ const resize = (width, height) => {
     mat4perspective,
     fovY,
     aspect,
-    1000,
-    0.1
+    0.1,
+    100.0
   )
   window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
 }
@@ -200,9 +205,10 @@ const mat4perspectiveTransform = window.mat4.fromTranslation(
   window.vec3.fromValues(0, 0, -1)
 )
 const mat4transform = window.mat4.create()
-const baseColor = [0.75, 0.75, 0.75]
-const starColor = [0.25, 0.25, 0.25]
-const consumableColor = [0.25, 0.75, 0.25]
+const defaultColor = [1.0, 1.0, 1.0, 1.0]
+const baseColor = [0.5, 0.5, 0.5, 1.0]
+const starColor = [0.25, 0.25, 0.25, 1.0]
+const consumableColor = [0.25, 0.75, 0.25, 1.0]
 const drawScene = () => {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
   gl.uniformMatrix4fv(shaderProgram.u_mat4perspective, false, mat4perspective)
@@ -218,17 +224,22 @@ const drawScene = () => {
       renderShapeBuffer({
         shapeBuffer: shapeBuffers.player,
         transform: mat4transform,
-        color: hueToRgb(item.hue)
+        color: hueToRgba(item.hue)
       })
     })
   }
   if (state.meteors && state.meteors.length) {
     state.meteors.forEach((item) => {
       makeTransformsFromGameObject(mat4transform, item)
+      let color = item.consumable ? consumableColor : baseColor
+      if (item.invincible) {
+        color = color.slice()
+        color[3] = 0.25
+      }
       renderShapeBuffer({
         shapeBuffer: shapeBuffers.meteors[item.id % shapeBuffers.meteors.length],
         transform: mat4transform,
-        color: item.consumable ? consumableColor : baseColor
+        color: color
       })
     })
   }
@@ -245,11 +256,10 @@ const drawScene = () => {
   if (circles.length) {
     circles.forEach((item) => {
       makeTransformsFromGameObject(mat4transform, item)
-      renderArrayBuffer({
-        arrayBuffer: arrayBuffers.circle,
+      renderShapeBuffer({
+        shapeBuffer: shapeBuffers.bubble,
         transform: mat4transform,
-        color: item.hue !== null ? hueToRgb(item.hue) : baseColor,
-        renderStyle: gl.LINE_LOOP
+        color: item.hue !== null ? hueToRgba(item.hue, 0.25) : baseColor
       })
     })
   }
@@ -289,10 +299,10 @@ const makeTransformsFromGameObject = (
   return outMatrix
 }
 const cachedHueMap = {}
-const hueToRgb = (hue) => {
+const hueToRgba = (hue, alpha = 1.0) => {
   const result = cachedHueMap[hue] || hsl2rgb([hue, 100, 50])
   cachedHueMap[hue] = result
-  return result
+  return [...result, alpha]
 }
 const renderShapeBuffer = (config) => {
   gl.uniformMatrix4fv(
@@ -300,7 +310,7 @@ const renderShapeBuffer = (config) => {
     false,
     config.transform || window.mat4.identity()
   )
-  gl.uniform3fv(shaderProgram.u_color, config.color || [1, 1, 1])
+  gl.uniform4fv(shaderProgram.u_color, config.color || [1, 1, 1, 1])
   bindShapeBuffer(config.shapeBuffer)
   gl.drawElements(
     config.renderStyle || gl.TRIANGLES,
@@ -312,6 +322,7 @@ const renderShapeBuffer = (config) => {
 const bindShapeBuffer = (shapeBuffer) => {
   const indices = shapeBuffer.indices
   const position = shapeBuffer.POSITION
+  const normal = shapeBuffer.NORMAL
   gl.bindBuffer(
     position.glTarget,
     position
@@ -320,6 +331,18 @@ const bindShapeBuffer = (shapeBuffer) => {
     shaderProgram.a_vec3position,
     position.elements,
     position.glType,
+    false,
+    0,
+    0
+  )
+  gl.bindBuffer(
+    position.glTarget,
+    normal
+  )
+  gl.vertexAttribPointer(
+    shaderProgram.a_vec3normal,
+    normal.elements,
+    normal.glType,
     false,
     0,
     0
@@ -336,7 +359,7 @@ const renderArrayBuffer = (config) => {
     false,
     config.transform || window.mat4.identity()
   )
-  gl.uniform3fv(shaderProgram.u_color, config.color || [1, 1, 1])
+  gl.uniform4fv(shaderProgram.u_color, config.color || defaultColor)
   bindArrayBuffer(config.arrayBuffer)
   gl.drawArrays(
     config.renderStyle || gl.TRIANGLES,
