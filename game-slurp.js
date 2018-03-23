@@ -1,5 +1,5 @@
 const game = {
-  bubbleCountMin: 4,
+  bubbleCountMin: 6,
   bubbleRadiusMin: 1 / 10,
   bubbleRadiusMax: 1 / 5,
   bubbleRadiusPop: 1 / 100,
@@ -109,12 +109,10 @@ const game = {
   },
   populateInitialBubbles: (state) => {
     state.bubbles = []
-    while (state.bubbles.length < game.bubbleCountMin) {
-      game.generateBubbles(state)
-    }
+    game.generateBubbles(state)
   },
   generateBubbles: (state) => {
-    if (state.bubbles.length < game.bubbleCountMin) {
+    while (state.bubbles.length < game.bubbleCountMin) {
       state.bubbles.push(game.createBubble())
     }
   },

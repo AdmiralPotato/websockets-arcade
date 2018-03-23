@@ -3,6 +3,7 @@ const EventEmitter = require('events')
 const gameMap = {
   'select': require('./game-select.js'),
   'meteor-collect': require('./game-meteor-collect.js'),
+  'cosmic-dash': require('./game-cosmic-dash.js'),
   'slurp': require('./game-slurp.js')
 }
 

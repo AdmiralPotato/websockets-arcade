@@ -7,6 +7,7 @@ if (!gl) {
 }
 if (!gl) {
   alert('Sorry, your browser cannot WebGL.')
+  throw new Error('Sorry, your browser cannot WebGL.')
 }
 const initResources = async () => {
   await Promise.all([

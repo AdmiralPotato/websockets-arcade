@@ -2,6 +2,7 @@ const game = {
   map: {
     // 'select': 'SELECT SCREEN',
     'meteor-collect': 'Meteor Collect',
+    'cosmic-dash': 'Cosmic Dash',
     'slurp': 'Slurp'
   },
   starMin: 30,
