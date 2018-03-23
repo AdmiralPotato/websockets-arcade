@@ -78,6 +78,7 @@ const game = {
     game.findTrackVertTangents(state)
     if (!anyCollisions) {
       state.track.isValid = true
+      game.putPlayersAtStart(state)
     }
   },
   findTrackVertTangents: (state) => {
@@ -158,8 +159,9 @@ const game = {
           true
         )
         if (startGame) {
-          state.events.emit('end')
-          state.startCircle = undefined
+          delete state.track
+          delete state.startCircle
+          state.events.emit('end', 'cosmic-dash')
           // game.changeModeToPlay(players, state)
         }
       }
@@ -173,9 +175,45 @@ const game = {
       const outsideInnerPoly = !inside(shipVert, state.track.innerPoly)
       const positionValid = insideOuterPoly && outsideInnerPoly
       if (!positionValid) {
-        ship.x = state.track.verts[3][0]
-        ship.y = state.track.verts[3][1]
+        ship.xVel *= -2
+        ship.yVel *= -2
+        ship.x += ship.xVel
+        ship.y += ship.yVel
+        global.wrap(ship)
       }
+    })
+  },
+  putPlayersAtStart: (state) => {
+    state.ships.forEach((ship) => {
+      ship.x = state.track.verts[3][0]
+      ship.y = state.track.verts[3][1]
+    })
+  },
+  putPlayersAtStartBetterForLaterWhenIHaveTimeToFigureOutWhatIDidWrong: (state) => {
+    const radius = global.activityCircleDefaults.radius
+    const radiusFrac = radius / game.trackVertRadius
+    const a = state.track.outerPoly[3]
+    const b = state.track.innerPoly[3]
+    const abDiff = [
+      a[0] - b[0],
+      a[1] - b[1]
+    ]
+    const c = [
+      a[0] + (abDiff[0] * (1 - radiusFrac)),
+      a[1] + (abDiff[1] * (1 - radiusFrac))
+    ]
+    const d = [
+      a[0] + (abDiff[0] * radiusFrac),
+      a[1] + (abDiff[1] * radiusFrac)
+    ]
+    const cdDiff = [
+      c[0] - d[0],
+      c[1] - d[1]
+    ]
+    state.ships.forEach((ship, index) => {
+      const frac = state.ships.length / index
+      ship.x = c[0] + (cdDiff[0] * frac)
+      ship.y = c[1] + (cdDiff[1] * frac)
     })
   }
 }

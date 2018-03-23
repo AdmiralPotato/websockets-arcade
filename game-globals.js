@@ -45,9 +45,6 @@ global.playerMaxSpeed = 1 / 80
 global.tickPlayers = (now, players, state) => {
   state.ships.forEach(ship => {
     let player = players[ship.id]
-    ship.x += ship.xVel
-    ship.y += ship.yVel
-    global.wrap(ship)
 
     if (player.onTime !== null) {
       const timeDiff = now - player.onTime
@@ -58,6 +55,10 @@ global.tickPlayers = (now, players, state) => {
       ship.xVel *= global.playerDrag
       ship.yVel *= global.playerDrag
     }
+
+    ship.x += ship.xVel
+    ship.y += ship.yVel
+    global.wrap(ship)
   })
 }
 global.activityCircleDefaults = {

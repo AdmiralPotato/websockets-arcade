@@ -44,7 +44,7 @@ window.gameCosmicDashComponent = {
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
-          text="Move along the race track without crashing"
+          text="Move along the race track quickly without touching the edges"
           :scale="0.01"
           pos="0,-0.6" />
       </g>
