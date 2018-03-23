@@ -78,7 +78,7 @@ const game = {
     game.findTrackVertTangents(state)
     if (!anyCollisions) {
       state.track.isValid = true
-      game.putPlayersAtStart(state)
+      game.putShipsAtStart(state)
     }
   },
   findTrackVertTangents: (state) => {
@@ -175,15 +175,16 @@ const game = {
       const outsideInnerPoly = !inside(shipVert, state.track.innerPoly)
       const positionValid = insideOuterPoly && outsideInnerPoly
       if (!positionValid) {
-        ship.xVel *= -2
-        ship.yVel *= -2
+        ship.xVel *= -1
+        ship.yVel *= -1
+        ship.hit = true
         ship.x += ship.xVel
         ship.y += ship.yVel
         global.wrap(ship)
       }
     })
   },
-  putPlayersAtStart: (state) => {
+  putShipsAtStart: (state) => {
     state.ships.forEach((ship) => {
       ship.x = state.track.verts[3][0]
       ship.y = state.track.verts[3][1]

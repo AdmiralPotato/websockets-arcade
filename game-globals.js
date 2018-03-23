@@ -46,7 +46,7 @@ global.tickPlayers = (now, players, state) => {
   state.ships.forEach(ship => {
     let player = players[ship.id]
 
-    if (player.onTime !== null) {
+    if (player.onTime !== null && !ship.hit) {
       const timeDiff = now - player.onTime
       const accelerationRampUp = Math.min(1, timeDiff / 1000)
       ship.xVel = Math.cos(ship.angle) * player.force * accelerationRampUp * global.playerMaxSpeed
@@ -54,6 +54,9 @@ global.tickPlayers = (now, players, state) => {
     } else {
       ship.xVel *= global.playerDrag
       ship.yVel *= global.playerDrag
+      if (ship.hit && ((Math.abs(ship.xVel) + Math.abs(ship.yVel)) < 0.0001)) {
+        delete ship.hit
+      }
     }
 
     ship.x += ship.xVel
