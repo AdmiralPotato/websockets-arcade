@@ -30,7 +30,7 @@ window.gameMeteorCollectComponent = {
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
-          text="move all ships to red circle to start"
+          text="collect meteors with your ship! white: 2pts, green: 5pts"
           :scale="0.01"
           pos="0,-0.6" />
       </g>

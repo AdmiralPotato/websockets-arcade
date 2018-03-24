@@ -30,7 +30,7 @@ window.gameSelectComponent = {
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
-          text="move all ships one red circle to select game"
+          text="move all ships to one red circle to select game"
           :scale="0.01"
           pos="0,-0.6" />
       </g>

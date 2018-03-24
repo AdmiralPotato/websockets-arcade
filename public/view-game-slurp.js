@@ -30,7 +30,7 @@ window.gameSlurpComponent = {
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
-          text="move all ships to red circle to start"
+          text="keep pace with the bubbles to slurp them down for points"
           :scale="0.01"
           pos="0,-0.6" />
       </g>
