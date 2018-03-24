@@ -145,6 +145,8 @@ const game = {
       } else {
         if (!state.startCircle) {
           state.startCircle = global.createActivityCircle({
+            label: 'Start',
+            radius: game.trackVertRadius,
             x: state.track.verts[3][0],
             y: state.track.verts[3][1],
             ticksToActivate: 300
@@ -175,46 +177,33 @@ const game = {
       const outsideInnerPoly = !inside(shipVert, state.track.innerPoly)
       const positionValid = insideOuterPoly && outsideInnerPoly
       if (!positionValid) {
-        ship.xVel *= -1
-        ship.yVel *= -1
-        ship.hit = true
-        ship.x += ship.xVel
-        ship.y += ship.yVel
-        global.wrap(ship)
+        if (!ship.outCount) {
+          ship.xVel *= -1
+          ship.yVel *= -1
+          ship.hit = true
+          ship.outCount = (ship.outCount || 0) + 1
+          ship.x += ship.xVel
+          ship.y += ship.yVel
+          global.wrap(ship)
+        } else {
+          ship.x = state.track.verts[3][0]
+          ship.y = state.track.verts[3][1]
+          ship.xVel = 0
+          ship.yVel = 0
+        }
+      } else {
+        delete ship.outCount
       }
     })
   },
   putShipsAtStart: (state) => {
-    state.ships.forEach((ship) => {
-      ship.x = state.track.verts[3][0]
-      ship.y = state.track.verts[3][1]
-    })
-  },
-  putPlayersAtStartBetterForLaterWhenIHaveTimeToFigureOutWhatIDidWrong: (state) => {
-    const radius = global.activityCircleDefaults.radius
-    const radiusFrac = radius / game.trackVertRadius
     const a = state.track.outerPoly[3]
     const b = state.track.innerPoly[3]
-    const abDiff = [
-      a[0] - b[0],
-      a[1] - b[1]
-    ]
-    const c = [
-      a[0] + (abDiff[0] * (1 - radiusFrac)),
-      a[1] + (abDiff[1] * (1 - radiusFrac))
-    ]
-    const d = [
-      a[0] + (abDiff[0] * radiusFrac),
-      a[1] + (abDiff[1] * radiusFrac)
-    ]
-    const cdDiff = [
-      c[0] - d[0],
-      c[1] - d[1]
-    ]
     state.ships.forEach((ship, index) => {
-      const frac = state.ships.length / index
-      ship.x = c[0] + (cdDiff[0] * frac)
-      ship.y = c[1] + (cdDiff[1] * frac)
+      const frac = (index + 0.5) / state.ships.length
+      const closer = global.mapRange(0, 1, 0.2, 0.8, frac)
+      ship.x = global.lerp(a[0], b[0], closer)
+      ship.y = global.lerp(a[1], b[1], closer)
     })
   }
 }

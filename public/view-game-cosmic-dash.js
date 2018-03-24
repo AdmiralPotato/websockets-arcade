@@ -17,16 +17,16 @@ window.gameCosmicDashComponent = {
   },
   template: `
     <g class="game-race">
-      <countdown-circle
-        v-if="startCircle"
-        v-bind="startCircle"
-      />
       <g class="track">
         <polygon :points="track.innerPoly.toString()" class="bounds inner" />
         <polygon :points="track.outerPoly.toString()" class="bounds outer" />
         <polygon :points="track.verts.toString()" class="center" />
         <path :d="tangents" class="tangents" />
       </g>
+      <countdown-circle
+        v-if="startCircle"
+        v-bind="startCircle"
+      />
       <g class="mode-intro">
         <g
           v-if="!track.isValid"

@@ -20,11 +20,14 @@ global.bound = (min, max, value) => {
   return Math.min(max, Math.max(min, value))
 }
 global.detectCollision = (a, b) => {
+  return global.getDistance(a, b) < a.radius + b.radius
+}
+global.getDistance = (a, b) => {
   const diffX = a.x - b.x
   const diffY = a.y - b.y
-  const distance = Math.sqrt((diffX * diffX) + (diffY * diffY))
-  return distance < a.radius + b.radius
+  return global.getLength(diffX, diffY)
 }
+global.getLength = (x, y) => { return Math.sqrt((x * x) + (y * y)) }
 global.wrap = (target) => {
   target.x = (Math.abs(target.x) > 1 ? -1 * Math.sign(target.x) : target.x) || 0
   target.y = (Math.abs(target.y) > 1 ? -1 * Math.sign(target.y) : target.y) || 0
@@ -54,7 +57,7 @@ global.tickPlayers = (now, players, state) => {
     } else {
       ship.xVel *= global.playerDrag
       ship.yVel *= global.playerDrag
-      if (ship.hit && ((Math.abs(ship.xVel) + Math.abs(ship.yVel)) < 0.0001)) {
+      if (ship.hit && (global.getLength(ship.xVel, ship.yVel) < 0.0001)) {
         delete ship.hit
       }
     }
