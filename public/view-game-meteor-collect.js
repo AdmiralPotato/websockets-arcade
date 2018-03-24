@@ -41,7 +41,7 @@ window.gameMeteorCollectComponent = {
           class="text-timer"
           :text="timerStatus"
           :scale="0.01"
-          pos="0,-0.8" />
+          pos="0,-0.9" />
       </g>
       <g class="mode-score"
         v-if="mode === 'score'"

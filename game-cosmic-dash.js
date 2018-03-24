@@ -66,6 +66,30 @@ const game = {
       ])
     }
     state.track.verts = verts
+    game.centerTrackVerts(state)
+  },
+  centerTrackVerts: (state) => {
+    const verts = state.track.verts
+    const bounds = {
+      xMin: verts[0][0],
+      yMin: verts[0][0],
+      xMax: verts[0][1],
+      yMax: verts[0][1]
+    }
+    verts.forEach((a) => {
+      bounds.xMin = Math.min(a[0], bounds.xMin)
+      bounds.xMax = Math.max(a[0], bounds.xMax)
+      bounds.yMin = Math.min(a[1], bounds.yMin)
+      bounds.yMax = Math.max(a[1], bounds.yMax)
+    })
+    const centerX = 0 - global.lerp(bounds.xMin, bounds.xMax, 0.5)
+    const centerY = 0 - global.lerp(bounds.yMin, bounds.yMax, 0.5)
+    state.track.verts = verts.map((a) => {
+      return [
+        a[0] + centerX,
+        a[1] + centerY
+      ]
+    })
   },
   inflateTrack: (state) => {
     const verts = state.track.verts
@@ -97,8 +121,7 @@ const game = {
         a[1] + velocities[index][1]
       ]
     })
-    // console.table(comparisons)
-    // console.table(velocities)
+    game.centerTrackVerts(state)
     game.findTrackVertTangents(state)
     if (!anyCollisions) {
       state.track.isValid = true
@@ -251,7 +274,7 @@ const game = {
         quads.map(() => false)
       )
       let pointsThisLap = 0
-      let lastQuad
+      let lastQuad = 0
       playerState.forEach((playerHasBeenToThisQuadThisLap, index) => {
         if (
           !playerHasBeenToThisQuadThisLap &&
