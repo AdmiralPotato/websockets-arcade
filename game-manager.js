@@ -97,7 +97,8 @@ const manager = {
     'tick',
     'ticksToActivate',
     'scoreSnapshots',
-    'events'
+    'events',
+    'meta'
   ],
   filterStateDataForClientSide: (state) => {
     const result = JSON.parse(JSON.stringify(state, (key, value) => {

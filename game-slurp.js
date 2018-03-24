@@ -41,7 +41,7 @@ const game = {
     state.events.emit('start')
   },
   changeModeToScore: (players, state) => {
-    state.bubbles = []
+    delete state.bubbles
     global.totalPlayerScores(players, state)
   },
   tickGame: (now, players, state) => {

@@ -137,6 +137,7 @@ global.totalPlayerScores = (players, state) => {
     highScore = Math.max(highScore, ship.score)
     scores[index] = ship.score
     ship.score = 0
+    ship.hit = false
   })
   highScore = highScore || 1 // protect against division by 0 if all players score 0
   snapshots.shipStateInitial = JSON.parse(JSON.stringify(state.ships))

@@ -65,19 +65,19 @@ svg .vector-text.text-timer {
   color: #f00;
 }
 
-svg .track .bounds.outer {
-  color: #ff0;
+svg .track {
+  color: #fff;
 }
-svg .track .bounds.inner {
-  color: #f0f;
+svg .verts {
+  color: #f00;
 }
 svg .track .tangents {
   color: #f00;
   opacity: 0.2;
 }
 svg .track .center {
-  color: #00f;
-  opacity: 0.2;
+  color: #f00;
+  opacity: 0.1;
 }
 
 svg .countdown-tick {

@@ -1,5 +1,7 @@
 window.gameCosmicDashComponent = {
   props: {
+    mode: String,
+    timer: Number,
     track: Object,
     startCircle: Object
   },
@@ -17,20 +19,24 @@ window.gameCosmicDashComponent = {
   },
   template: `
     <g class="game-race">
-      <g class="track">
+      <g
+        v-if="track"
+        class="track"
+      >
+        <path :d="tangents" class="tangents" />
         <polygon :points="track.innerPoly.toString()" class="bounds inner" />
         <polygon :points="track.outerPoly.toString()" class="bounds outer" />
         <polygon :points="track.verts.toString()" class="center" />
-        <path :d="tangents" class="tangents" />
       </g>
-      <countdown-circle
-        v-if="startCircle"
-        v-bind="startCircle"
-      />
-      <g class="mode-intro">
+      <g class="mode-intro"
+        v-if="mode === 'intro'"
+      >
+        <countdown-circle
+          v-bind="startCircle"
+        />
         <g
           v-if="!track.isValid"
-          class="track-verts"
+          class="verts"
         >
           <vert 
             v-for="(item, index) in track.verts"
@@ -45,6 +51,32 @@ window.gameCosmicDashComponent = {
           pos="0,-0.8" />
         <vector-text
           text="Move along the race track quickly without touching the edges"
+          :scale="0.01"
+          pos="0,-0.6" />
+      </g>
+      <g class="mode-intro"
+        v-if="mode === 'play'"
+      >
+        <vector-text
+          class="text-timer"
+          :text="timerStatus"
+          :scale="0.01"
+          pos="0,-0.8" />
+      </g>
+      <g class="mode-score"
+        v-if="mode === 'score'"
+      >
+        <vector-text
+          text="RACE IS NOW OVER"
+          :scale="0.04"
+          pos="0,-0.8" />
+        <vector-text
+          class="text-timer"
+          :text="'Next round in: ' + timerStatus"
+          :scale="0.01"
+          pos="0,-0.5" />
+        <vector-text
+          text="LET'S SEE WHO LOST MOST BEST!"
           :scale="0.01"
           pos="0,-0.6" />
       </g>

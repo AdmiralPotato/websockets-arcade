@@ -2,6 +2,7 @@ const inside = require('point-in-polygon')
 
 const game = {
   trackVertRadius: 0.2,
+  durationPlay: 3000,
   activate: (players, state) => {
     Object.assign(
       state,
@@ -12,7 +13,11 @@ const game = {
           innerPoly: [],
           outerPoly: [],
           tangentPoints: [],
-          isValid: false
+          isValid: false,
+          meta: {
+            quads: [],
+            playerQuadBooleanStates: {}
+          }
         }
       }
     )
@@ -22,10 +27,29 @@ const game = {
     const now = Date.now()
     state.mode = 'intro'
     state.ships.forEach(ship => {
-      ship.score = ''
+      ship.score = 0
       players[ship.id].lastActiveTime = now
     })
+    state.startCircle = global.createActivityCircle({
+      label: 'Start',
+      radius: game.trackVertRadius,
+      ticksToActivate: 300
+    })
     game.createRandomTrackVerts(state)
+  },
+  changeModeToPlay: (players, state) => {
+    delete state.startCircle
+    state.mode = 'play'
+    state.track.meta.playerQuadBooleanStates = {}
+    state.timer = game.durationPlay
+    state.ships.forEach(ship => {
+      ship.score = 0
+    })
+    state.events.emit('start')
+  },
+  changeModeToScore: (players, state) => {
+    delete state.track
+    global.totalPlayerScores(players, state)
   },
   createRandomTrackVerts: (state) => {
     const count = 12
@@ -45,7 +69,7 @@ const game = {
   },
   inflateTrack: (state) => {
     const verts = state.track.verts
-    const stepSize = game.trackVertRadius / 100
+    const stepSize = game.trackVertRadius / 200
     const allButLast = verts.slice(0, -1)
     const velocities = verts.map(() => [0, 0])
     let anyCollisions = false
@@ -78,6 +102,7 @@ const game = {
     game.findTrackVertTangents(state)
     if (!anyCollisions) {
       state.track.isValid = true
+      game.createQuads(state)
       game.putShipsAtStart(state)
     }
   },
@@ -128,31 +153,39 @@ const game = {
     state.track.innerPoly = innerPoly
     state.track.outerPoly = outerPoly
   },
+  createQuads: (state) => {
+    state.track.meta.quads = state.track.verts.map((vert, index) => {
+      return game.createQuadByIndices(
+        index,
+        (index + 1) % state.track.verts.length,
+        state
+      )
+    })
+  },
+  createQuadByIndices: (indexA, indexB, state) => {
+    return [
+      state.track.innerPoly[indexA],
+      state.track.innerPoly[indexB],
+      state.track.outerPoly[indexB],
+      state.track.outerPoly[indexA]
+    ]
+  },
   comparePoints: (a, b) => {
     const diffX = a[0] - b[0]
     const diffY = a[1] - b[1]
-    const distance = Math.sqrt((diffX * diffX) + (diffY * diffY))
+    const distance = global.getLength(diffX, diffY)
     return {
       hit: distance < (game.trackVertRadius * 2),
       angle: Math.atan2(diffY, diffX)
     }
   },
   tickGame: (now, players, state) => {
-    global.tickPlayers(now, players, state)
     if (state.mode === 'intro') {
       if (!state.track.isValid) {
         game.inflateTrack(state)
+        state.startCircle.x = state.track.verts[3][0]
+        state.startCircle.y = state.track.verts[3][1]
       } else {
-        if (!state.startCircle) {
-          state.startCircle = global.createActivityCircle({
-            label: 'Start',
-            radius: game.trackVertRadius,
-            x: state.track.verts[3][0],
-            y: state.track.verts[3][1],
-            ticksToActivate: 300
-          })
-        }
-        game.checkIfPlayersOutOfBounds(state)
         let startGame = global.circleSelectCountdown(
           now,
           state.startCircle,
@@ -161,16 +194,29 @@ const game = {
           true
         )
         if (startGame) {
-          delete state.track
-          delete state.startCircle
-          state.events.emit('end', 'cosmic-dash')
-          // game.changeModeToPlay(players, state)
+          game.changeModeToPlay(players, state)
         }
       }
     }
+    if (state.mode !== 'score') {
+      global.tickPlayers(now, players, state)
+      game.testPlayersAgainstTrackBounds(state)
+      if (state.track.isValid) {
+        game.testPlayersAgainstTrackQuads(state)
+      }
+    }
+    if (state.mode === 'play') {
+      state.timer -= 1
+      if (state.timer <= 0) {
+        game.changeModeToScore(players, state)
+      }
+    }
+    if (state.mode === 'score') {
+      global.animatePlayerScores(players, state)
+    }
     return state
   },
-  checkIfPlayersOutOfBounds (state) {
+  testPlayersAgainstTrackBounds (state) {
     state.ships.forEach((ship) => {
       const shipVert = [ship.x, ship.y]
       const insideOuterPoly = inside(shipVert, state.track.outerPoly)
@@ -196,13 +242,43 @@ const game = {
       }
     })
   },
+  testPlayersAgainstTrackQuads: (state) => {
+    const quads = state.track.meta.quads
+    const quadPlayerMap = state.track.meta.playerQuadBooleanStates
+    state.ships.forEach((ship) => {
+      let playerState = (
+        quadPlayerMap[ship.id] ||
+        quads.map(() => false)
+      )
+      let pointsThisLap = 0
+      let lastQuad
+      playerState.forEach((playerHasBeenToThisQuadThisLap, index) => {
+        if (
+          !playerHasBeenToThisQuadThisLap &&
+          inside([ship.x, ship.y], quads[index])
+        ) {
+          playerHasBeenToThisQuadThisLap = playerState[index] = true
+          ship.score += 1
+          lastQuad = index
+        }
+        if (playerHasBeenToThisQuadThisLap) {
+          pointsThisLap += 1
+        }
+      })
+      if (pointsThisLap === quads.length) {
+        playerState = quads.map(() => false)
+        playerState[lastQuad] = true
+      }
+      quadPlayerMap[ship.id] = playerState
+    })
+  },
   putShipsAtStart: (state) => {
     const a = state.track.outerPoly[3]
     const b = state.track.innerPoly[3]
     state.ships.forEach((ship, index) => {
       const frac = (index + 0.5) / state.ships.length
       const closer = global.mapRange(0, 1, 0.2, 0.8, frac)
-      ship.x = global.lerp(a[0], b[0], closer)
+      ship.x = global.lerp(a[0], b[0], closer) - 0.05
       ship.y = global.lerp(a[1], b[1], closer)
     })
   }
