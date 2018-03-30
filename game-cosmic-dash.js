@@ -249,11 +249,10 @@ const game = {
         if (!ship.outCount) {
           ship.xVel *= -1
           ship.yVel *= -1
-          ship.hit = true
-          ship.outCount = (ship.outCount || 0) + 1
           ship.x += ship.xVel
           ship.y += ship.yVel
-          global.wrap(ship)
+          ship.hit = true
+          ship.outCount = (ship.outCount || 0) + 1
         } else {
           ship.x = state.track.verts[3][0]
           ship.y = state.track.verts[3][1]

@@ -43,21 +43,32 @@ global.randomEdgePosition = () => {
 global.lerp = (a, b, progress) => {
   return a + ((b - a) * progress)
 }
-global.playerDrag = 0.955
-global.playerMaxSpeed = 1 / 80
+global.shipDrag = 0.955
+global.shipMaxSpeed = 1 / 80
+global.playerMaxForceAddedPerFrame = 1 / 2000
 global.tickPlayers = (now, players, state) => {
   state.ships.forEach(ship => {
     let player = players[ship.id]
 
+    ship.xVel *= global.shipDrag
+    ship.yVel *= global.shipDrag
+
     if (player.onTime !== null && !ship.hit) {
       const timeDiff = now - player.onTime
       const accelerationRampUp = Math.min(1, timeDiff / 1000)
-      ship.xVel = Math.cos(ship.angle) * player.force * accelerationRampUp * global.playerMaxSpeed
-      ship.yVel = Math.sin(ship.angle) * player.force * accelerationRampUp * global.playerMaxSpeed
+      const playerAddedForce = player.force * accelerationRampUp * global.playerMaxForceAddedPerFrame
+      const xVel = ship.xVel + Math.cos(player.angle) * playerAddedForce
+      const yVel = ship.yVel + Math.sin(player.angle) * playerAddedForce
+      ship.angle = Math.atan2(yVel, xVel)
+      ship.force = Math.min(global.getLength(xVel, yVel), global.shipMaxSpeed)
+      ship.xVel = Math.cos(ship.angle) * ship.force
+      ship.yVel = Math.sin(ship.angle) * ship.force
     } else {
-      ship.xVel *= global.playerDrag
-      ship.yVel *= global.playerDrag
-      if (ship.hit && (global.getLength(ship.xVel, ship.yVel) < 0.0001)) {
+      ship.force = global.getLength(ship.xVel, ship.yVel)
+      if (ship.hit && (ship.force < 0.001)) {
+        if (player.onTime !== null) {
+          player.onTime = now
+        }
         delete ship.hit
       }
     }
@@ -146,6 +157,7 @@ global.totalPlayerScores = (players, state) => {
     ship.score = 0
     ship.x = (((index + 0.5) / shipCount) - 0.5) * (0.8 * 2)
     ship.y = 0.8
+    ship.angle = global.tau * 0.75
   })
   snapshots.shipStateC = JSON.parse(JSON.stringify(snapshots.shipStateA))
   const mapY = (score) => {
@@ -208,6 +220,7 @@ global.lerpShips = (state, startState, targetState, progress) => {
 }
 global.lerpShip = (target, a, b, progress) => {
   target.x = global.lerp(a.x, b.x, progress)
+  target.angle = global.lerp(a.angle, b.angle, progress)
   if (b.yMax === undefined) {
     target.y = global.lerp(a.y, b.y, progress)
     target.score = Math.floor(global.lerp(a.score, b.score, progress))

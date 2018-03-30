@@ -17,6 +17,6 @@ void main() {
   vec4 normal = completeTransfrom * vec4(a_vec3normal, 0.0);
   gl_Position = completeTransfrom * vec4(a_vec3position, 1.0);
   float directional = max(dot(normal.xyz, directionalVector), 0.0);
-  v_color.xyz = u_color.xyz * (ambientLight + (directionalLightColor * directional));
+  v_color.xyz = u_color.xyz * (ambientLight + (directionalLightColor * directional)) * 3.0;
   v_color[3] = u_color[3];
 }

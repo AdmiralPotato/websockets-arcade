@@ -138,6 +138,7 @@ const manager = {
       xVel: 0,
       yVel: 0,
       angle: 0,
+      playerAngle: 0,
       radius: manager.shipRadius,
       hue: player.hue,
       hit: false,
@@ -176,7 +177,8 @@ const manager = {
       }
       player.lastActiveTime = Date.now()
       player.force = Math.min(1, moveData.force)
-      player.ship.angle = (moveData.angle !== undefined ? -moveData.angle : player.ship.angle)
+      player.angle = (moveData.angle !== undefined ? -moveData.angle : player.angle) || 0
+      player.ship.playerAngle = player.angle
     } else {
       console.error('Cheating! Someone is trying to control a ship that is not on their socket!')
     }

@@ -6,6 +6,7 @@ window.shipComponent = {
     x: Number,
     y: Number,
     angle: Number,
+    playerAngle: Number,
     radius: Number,
     hue: Number,
     isPlayer: Boolean,
@@ -15,8 +16,16 @@ window.shipComponent = {
   computed: {
     shipTransforms: function () {
       const transforms = [
-        'rotate(' + ((this.angle / window.tau) * 360) + ')',
-        'scale(' + this.radius + ')'
+        'scale(' + this.radius + ')',
+        'rotate(' + ((this.angle / window.tau) * 360) + ')'
+      ]
+      return transforms.join(',')
+    },
+    playerAngleTransforms: function () {
+      const transforms = [
+        'rotate(' + ((this.playerAngle / window.tau) * 360) + ')',
+        'translate(' + (this.radius + (this.radius * 0.75)) + ')',
+        'scale(' + (this.radius * 0.2) + ')'
       ]
       return transforms.join(',')
     },
@@ -40,6 +49,9 @@ window.shipComponent = {
           pos="0,-0.07"
         />
         <g :transform="shipTransforms">
+          <use xlink:href="#ship" />
+        </g>
+        <g :transform="playerAngleTransforms">
           <use xlink:href="#ship" />
         </g>
       </g>
