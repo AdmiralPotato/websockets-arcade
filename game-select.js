@@ -3,6 +3,7 @@ const game = {
     // 'select': 'SELECT SCREEN',
     'meteor-collect': 'Meteor Collect',
     'cosmic-dash': 'Cosmic Dash',
+    'cave-escape': 'Cave Escape',
     'slurp': 'Slurp'
   },
   starMin: 30,
@@ -19,7 +20,7 @@ const game = {
             label,
             x: (((index + 0.5) / list.length) - 0.5) * (0.8 * 2),
             y: 0.8,
-            ticksToActivate: 300
+            ticksToActivate: 3 * global.ticksPerSecond
           })
         })
       }

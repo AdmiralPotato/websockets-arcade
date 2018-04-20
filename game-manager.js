@@ -4,6 +4,7 @@ const gameMap = {
   'select': require('./game-select.js'),
   'meteor-collect': require('./game-meteor-collect.js'),
   'cosmic-dash': require('./game-cosmic-dash.js'),
+  'cave-escape': require('./game-cave-escape.js'),
   'slurp': require('./game-slurp.js')
 }
 
@@ -49,11 +50,11 @@ const manager = {
     clearInterval(manager.interval)
     manager.interval = setInterval(
       manager.tickGame,
-      10
+      1000 / global.ticksPerSecond
     )
     manager.state.events.on('start', manager.onGameStart)
     manager.state.events.on('end', manager.onGameEnd)
-    manager.activateGame('select')
+    manager.activateGame('cave-escape')
   },
   activateGame: (gameName) => {
     console.log('Activating Game:', gameName)

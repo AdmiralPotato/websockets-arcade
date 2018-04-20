@@ -11,7 +11,7 @@ const game = {
   meteorStartCount: 10,
   pointsSplit: 2,
   pointsCollect: 5,
-  durationPlay: 30 * 100, // ticks are every 10ms
+  durationPlay: 30 * global.ticksPerSecond, // ticks are every 10ms
   activate: (players, state) => {
     Object.assign(
       state,

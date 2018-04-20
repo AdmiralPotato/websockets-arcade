@@ -2,7 +2,7 @@ const inside = require('point-in-polygon')
 
 const game = {
   trackVertRadius: 0.2,
-  durationPlay: 3000,
+  durationPlay: 30 * global.ticksPerSecond,
   activate: (players, state) => {
     Object.assign(
       state,
@@ -33,7 +33,7 @@ const game = {
     state.startCircle = global.createActivityCircle({
       label: 'Start',
       radius: game.trackVertRadius,
-      ticksToActivate: 300
+      ticksToActivate: 3 * global.ticksPerSecond
     })
     game.createRandomTrackVerts(state)
   },

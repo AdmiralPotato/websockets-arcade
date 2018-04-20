@@ -1,4 +1,6 @@
 global.tau = Math.PI * 2
+global.ticksPerSecond = 100
+global.screenWidth = 2
 global.arrayRemove = function (array, item) {
   let index
   while ((index = array.indexOf(item)) !== -1) {
@@ -46,7 +48,7 @@ global.lerp = (a, b, progress) => {
 global.shipDrag = 0.955
 global.shipMaxSpeed = 1 / 80
 global.playerMaxForceAddedPerFrame = 1 / 2000
-global.tickPlayers = (now, players, state) => {
+global.tickPlayers = (now, players, state, options) => {
   state.ships.forEach(ship => {
     let player = players[ship.id]
 
@@ -75,7 +77,9 @@ global.tickPlayers = (now, players, state) => {
 
     ship.x += ship.xVel
     ship.y += ship.yVel
-    global.wrap(ship)
+    if (options && !options.noWrap) {
+      global.wrap(ship)
+    }
   })
 }
 global.activityCircleDefaults = {
@@ -86,7 +90,7 @@ global.activityCircleDefaults = {
   hue: 0,
   sec: 0,
   tick: 0,
-  ticksToActivate: 300
+  ticksToActivate: 3 * global.ticksPerSecond
 }
 global.createActivityCircle = (config) => {
   return Object.assign({}, global.activityCircleDefaults, config)
@@ -172,7 +176,7 @@ global.totalPlayerScores = (players, state) => {
   })
   state.scoreSnapshots = snapshots
 }
-global.durationScore = 10 * 100 // Score display time = 15s,
+global.durationScore = 10 * global.ticksPerSecond // Score display time = 15s,
 global.durationScoreA = 0.95 * global.durationScore
 global.durationScoreB = 0.85 * global.durationScore
 global.durationScoreC = 0.45 * global.durationScore

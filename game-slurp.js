@@ -8,7 +8,7 @@ const game = {
   bubbleConsumptionRate: 1 / 10 / 500,
   bubbleLastId: 0,
   pointsSlurp: 1 / 10,
-  durationPlay: 30 * 100, // ticks are every 10ms
+  durationPlay: 30 * global.ticksPerSecond, // ticks are every 10ms
   activate: (players, state) => {
     Object.assign(
       state,
