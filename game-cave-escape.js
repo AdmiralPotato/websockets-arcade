@@ -2,7 +2,7 @@ const inside = require('point-in-polygon')
 
 const game = {
   segmentsPerScreenWidth: 5,
-  segmentsPerSecond: 1,
+  segmentsPerSecond: 2.5,
   caveHeightMin: -0.7,
   caveHeightMax: 0.7,
   caveRadiusMin: 0.2,
@@ -78,8 +78,8 @@ const game = {
   tickGame: (now, players, state) => {
     const segmentSpacing = global.screenWidth / game.segmentsPerScreenWidth
     const seconds = state.meta.tick / global.ticksPerSecond
-    const shipPushback = segmentSpacing / global.ticksPerSecond
-    state.meta.scroll[0] = -segmentSpacing * seconds
+    const shipPushback = (segmentSpacing / global.ticksPerSecond) * game.segmentsPerSecond
+    state.meta.scroll[0] = -segmentSpacing * seconds * game.segmentsPerSecond
     state.track.verts = state.meta.verts.map((item) => {
       return [
         item[0] + state.meta.scroll[0],
