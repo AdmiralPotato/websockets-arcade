@@ -18,7 +18,7 @@ window.gameCosmicDashComponent = {
     }
   },
   template: `
-    <g class="game-race">
+    <g class="game-cosmic-dash">
       <g
         v-if="track"
         class="track"

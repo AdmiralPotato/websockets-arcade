@@ -79,6 +79,10 @@ svg .track .center {
   color: #f00;
   opacity: 0.1;
 }
+svg .track .cave {
+  color: #f00;
+  opacity: 0.5;
+}
 
 svg .countdown-tick {
   color: currentColor;

@@ -2,6 +2,7 @@ window.gameCaveEscapeComponent = {
   props: {
     mode: String,
     timer: Number,
+    stars: Array,
     track: Object,
     startCircle: Object
   },
@@ -18,22 +19,31 @@ window.gameCaveEscapeComponent = {
     }
   },
   template: `
-    <g class="game-race">
+    <g class="game-cave-escape">
       <g
         v-if="track"
         class="track"
       >
-      <g
-        class="verts"
-      >
-        <vert 
-          v-for="(item, index) in track.verts"
-          :pos="item"
-          :key="index"
-          :radius="track.radii[index]"
-        />
-      </g>
-        <polygon :points="track.verts.toString()" class="center" />
+        <defs>
+          <polygon id="track" :points="track.walls.toString()" class="bounds outer" />          
+          <use id="track-background" xlink:href="#track" transform="scale(0.8)" />
+          <use id="track-foreground" xlink:href="#track" transform="scale(1.2)" />
+          <clipPath id="clipping-track-foreground">
+            <use xlink:href="#track" transform="scale(1.2)" />
+          </clipPath>
+        </defs>
+        <g clip-path="url(#clipping-track-foreground)">
+          <g class="stars hit">
+            <star
+              v-for="item in stars"
+              v-bind="item"
+              :key="item.id"
+            />
+          </g>
+        </g>
+        <use xlink:href="#track-background" class="track cave" />
+        <use xlink:href="#track" class="bounds inner" />
+        <use xlink:href="#track-foreground" class="track cave" />
       </g>
       <g class="mode-intro"
         v-if="mode === 'intro'"
@@ -63,7 +73,7 @@ window.gameCaveEscapeComponent = {
         v-if="mode === 'score'"
       >
         <vector-text
-          text="YOU HAVE ESCAPED THE CAVE FOR NOW"
+          text="CAVE ESCAPED!"
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
@@ -72,7 +82,7 @@ window.gameCaveEscapeComponent = {
           :scale="0.01"
           pos="0,-0.5" />
         <vector-text
-          text="LET'S SEE BURNED LEAST!"
+          text="LET'S SEE WHO BURNED LEAST!"
           :scale="0.01"
           pos="0,-0.6" />
       </g>
