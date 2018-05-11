@@ -7,6 +7,11 @@ const game = {
   caveHeightMax: 0.7,
   caveRadiusMin: 0.2,
   caveRadiusMax: 0.5,
+  lavaWaveVertCount: 20,
+  lavaWaveFreq: 3 * global.tau,
+  lavaWaveSpeed: -1000,
+  lavaWaveDepth: 0.1,
+  lavaWaveOffset: -0.6,
   starMin: 30,
   starMinRadius: 0.005,
   starMaxRadius: 0.01,
@@ -19,13 +24,19 @@ const game = {
         track: {
           walls: []
         },
+        lavaWave: [],
         meta: {
           tick: 0,
           verts: [],
           radii: [],
           walls: [],
           scroll: [0, 0],
-          wholeTrack: []
+          wholeTrack: [],
+          lavaWaveVerts: [],
+          lavaWaveBackPoints: [
+            [-1, 1],
+            [-1, -1]
+          ]
         }
       }
     )
@@ -64,6 +75,7 @@ const game = {
       ticksToActivate: 3 * global.ticksPerSecond
     })
     game.createRandomTrackVerts(state)
+    game.createLavaWave(state)
   },
   changeModeToPlay: (players, state) => {
     delete state.startCircle
@@ -121,7 +133,56 @@ const game = {
     })
     state.meta.walls = [].concat(topWall, bottomWall)
   },
+  createLavaWave: (state) => {
+    while (state.meta.lavaWaveVerts.length <= game.lavaWaveVertCount) {
+      const frac = state.meta.lavaWaveVerts.length / game.lavaWaveVertCount
+      const x = game.getLavaWaveVertXFromFrac(frac, state.meta.tick)
+      const y = global.mapRange(0, 1, -1, 1, frac)
+      state.meta.lavaWaveVerts.push([x, y])
+    }
+  },
+  getLavaWaveVertXFromFrac: (frac, tick) => {
+    return (Math.sin(
+      (frac + (tick / game.lavaWaveSpeed)) * game.lavaWaveFreq
+    ) * game.lavaWaveDepth) + game.lavaWaveOffset
+  },
   tickGame: (now, players, state) => {
+    game.tickCameraScroll(now, players, state)
+    game.tickLavaWave(now, players, state)
+    if (state.mode === 'intro') {
+      const startGame = global.circleSelectCountdown(
+        now,
+        state.startCircle,
+        players,
+        state,
+        true
+      )
+      if (startGame) {
+        game.changeModeToPlay(players, state)
+      }
+    }
+    if (state.mode !== 'score') {
+      global.tickPlayers(now, players, state, {noWrap: true})
+      game.testPlayersAgainstCaveBounds(state)
+      game.testPlayersAgainstLavaBounds(state)
+      game.tickStars(now, state)
+    }
+    if (state.mode === 'play') {
+      state.timer -= 1
+      if (state.timer <= 0) {
+        game.changeModeToScore(players, state)
+      }
+    }
+    if (state.mode === 'score') {
+      global.animatePlayerScores(players, state)
+    }
+    state.meta.tick += 1
+    if (state.meta.tick >= game.durationPlay) {
+      state.meta.tick = 0
+    }
+    return state
+  },
+  tickCameraScroll: (now, players, state) => {
     const segmentSpacing = global.screenWidth / game.segmentsPerScreenWidth
     const seconds = state.meta.tick / global.ticksPerSecond
     const shipPushback = (segmentSpacing / global.ticksPerSecond) * game.segmentsPerSecond
@@ -141,43 +202,19 @@ const game = {
     state.ships.forEach(ship => {
       ship.x -= shipPushback
     })
-    if (state.mode === 'intro') {
-      const startGame = global.circleSelectCountdown(
-        now,
-        state.startCircle,
-        players,
-        state,
-        true
-      )
-      if (startGame) {
-        game.changeModeToPlay(players, state)
-      }
-    }
-    if (state.mode !== 'score') {
-      global.tickPlayers(now, players, state, {noWrap: true})
-      game.testPlayersAgainstTrackBounds(state)
-      game.tickStars(now, state)
-    }
-    if (state.mode === 'play') {
-      state.timer -= 1
-      if (state.timer <= 0) {
-        game.changeModeToScore(players, state)
-      }
-    }
-    if (state.mode === 'score') {
-      global.animatePlayerScores(players, state)
-    }
-    state.meta.tick += 1
-    if (state.meta.tick >= game.durationPlay) {
-      state.meta.tick = 0
-    }
-    return state
   },
-  testPlayersAgainstTrackBounds (state) {
+  tickLavaWave: (now, players, state) => {
+    state.meta.lavaWaveVerts.forEach((item, index) => {
+      const frac = index / game.lavaWaveVertCount
+      item[0] = game.getLavaWaveVertXFromFrac(frac, state.meta.tick)
+    })
+    state.lavaWave = state.meta.lavaWaveVerts.concat(state.meta.lavaWaveBackPoints)
+  },
+  testPlayersAgainstCaveBounds: (state) => {
     state.ships.forEach((ship) => {
       const shipVert = [ship.x, ship.y]
-      const insideTrackPoly = inside(shipVert, state.track.walls)
-      if (!insideTrackPoly) {
+      const isShipInsideCavePoly = inside(shipVert, state.track.walls)
+      if (!isShipInsideCavePoly) {
         if (!ship.outCount) {
           ship.xVel *= -1
           ship.yVel *= -1
@@ -186,8 +223,9 @@ const game = {
           ship.hit = true
           ship.outCount = (ship.outCount || 0) + 1
         } else {
-          ship.x = state.track.verts[3][0]
-          ship.y = state.track.verts[3][1]
+          const safePoint = game.findSafePoint(state)
+          ship.x = safePoint[0]
+          ship.y = safePoint[1]
           ship.xVel = 0
           ship.yVel = 0
         }
@@ -195,6 +233,34 @@ const game = {
         delete ship.outCount
       }
     })
+  },
+  testPlayersAgainstLavaBounds: (state) => {
+    state.ships.forEach((ship) => {
+      const shipVert = [ship.x, ship.y]
+      const isShipInsideLavaPoly = inside(shipVert, state.lavaWave)
+      if (isShipInsideLavaPoly) {
+        ship.xVel = 0.05
+        ship.yVel *= -1
+        ship.x += ship.xVel
+        ship.y += ship.yVel
+        ship.hit = true
+        ship.outCount = (ship.outCount || 0) + 1
+      }
+    })
+  },
+  findSafePoint: (state) => {
+    const scrollX = (0 - state.meta.scroll[0]) + 0.5
+    let smallestDistance = state.meta.verts[state.meta.verts.length - 1][0]
+    let closestXIndex = 0
+    state.meta.verts.forEach((item, index) => {
+      const x = item[0]
+      const distance = Math.abs(scrollX - x)
+      if (distance < smallestDistance) {
+        smallestDistance = distance
+        closestXIndex = index
+      }
+    })
+    return state.track.verts[closestXIndex]
   },
   tickStars: (now, state) => {
     state.stars.forEach(item => {

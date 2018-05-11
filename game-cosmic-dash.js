@@ -242,9 +242,9 @@ const game = {
   testPlayersAgainstTrackBounds (state) {
     state.ships.forEach((ship) => {
       const shipVert = [ship.x, ship.y]
-      const insideOuterPoly = inside(shipVert, state.track.outerPoly)
-      const outsideInnerPoly = !inside(shipVert, state.track.innerPoly)
-      const positionValid = insideOuterPoly && outsideInnerPoly
+      const isShipInsideOuterPoly = inside(shipVert, state.track.outerPoly)
+      const isShipOutsideInnerPoly = !inside(shipVert, state.track.innerPoly)
+      const positionValid = isShipInsideOuterPoly && isShipOutsideInnerPoly
       if (!positionValid) {
         if (!ship.outCount) {
           ship.xVel *= -1

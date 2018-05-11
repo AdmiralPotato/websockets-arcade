@@ -3,6 +3,7 @@ window.gameCaveEscapeComponent = {
     mode: String,
     timer: Number,
     stars: Array,
+    lavaWave: Array,
     track: Object,
     startCircle: Object
   },
@@ -25,7 +26,7 @@ window.gameCaveEscapeComponent = {
         class="track"
       >
         <defs>
-          <polygon id="track" :points="track.walls.toString()" class="bounds outer" />          
+          <polygon id="track" :points="track.walls.toString()" class="bounds outer" />
           <use id="track-background" xlink:href="#track" transform="scale(0.8)" />
           <use id="track-foreground" xlink:href="#track" transform="scale(1.2)" />
           <clipPath id="clipping-track-foreground">
@@ -44,6 +45,7 @@ window.gameCaveEscapeComponent = {
         <use xlink:href="#track-background" class="track cave" />
         <use xlink:href="#track" class="bounds inner" />
         <use xlink:href="#track-foreground" class="track cave" />
+        <polygon :points="lavaWave.toString()" class="lava" />
       </g>
       <g class="mode-intro"
         v-if="mode === 'intro'"
