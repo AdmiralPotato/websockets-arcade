@@ -8,10 +8,14 @@ const game = {
   caveRadiusMin: 0.2,
   caveRadiusMax: 0.5,
   lavaWaveVertCount: 20,
-  lavaWaveFreq: 3 * global.tau,
+  lavaWaveFreq: 0.75 * global.tau,
+  lavaWaveFreq2: 1.5 * global.tau,
+  lavaWaveFreq3: 3 * global.tau,
   lavaWaveSpeed: -1000,
   lavaWaveDepth: 0.1,
   lavaWaveOffset: -0.6,
+  distanceToLavaWaveScoreMultiplier: 0.2,
+  distanceToLavaWaveScoreFalloff: 1.2,
   starMin: 30,
   starMinRadius: 0.005,
   starMaxRadius: 0.01,
@@ -66,6 +70,7 @@ const game = {
     const now = Date.now()
     state.mode = 'intro'
     state.ships.forEach(ship => {
+      ship.meta.score = 0
       ship.score = 0
       players[ship.id].lastActiveTime = now
     })
@@ -82,6 +87,7 @@ const game = {
     state.mode = 'play'
     state.timer = game.durationPlay
     state.ships.forEach(ship => {
+      ship.meta.score = 0
       ship.score = 0
     })
     state.events.emit('start')
@@ -136,19 +142,20 @@ const game = {
   createLavaWave: (state) => {
     while (state.meta.lavaWaveVerts.length <= game.lavaWaveVertCount) {
       const frac = state.meta.lavaWaveVerts.length / game.lavaWaveVertCount
-      const x = game.getLavaWaveVertXFromFrac(frac, state.meta.tick)
       const y = global.mapRange(0, 1, -1, 1, frac)
+      const x = game.getLavaWaveXFromYAndTick(y, state.meta.tick)
       state.meta.lavaWaveVerts.push([x, y])
     }
   },
-  getLavaWaveVertXFromFrac: (frac, tick) => {
-    return (Math.sin(
-      (frac + (tick / game.lavaWaveSpeed)) * game.lavaWaveFreq
+  getLavaWaveXFromYAndTick: (y, tick) => {
+    const frac = global.mapRange(-1, 1, 0, 1, y)
+    return ((
+      Math.sin((frac + (tick / game.lavaWaveSpeed)) * game.lavaWaveFreq) +
+      Math.sin((frac + (tick / game.lavaWaveSpeed)) * game.lavaWaveFreq2) +
+      Math.sin((frac + (tick / game.lavaWaveSpeed)) * game.lavaWaveFreq3)
     ) * game.lavaWaveDepth) + game.lavaWaveOffset
   },
   tickGame: (now, players, state) => {
-    game.tickCameraScroll(now, players, state)
-    game.tickLavaWave(now, players, state)
     if (state.mode === 'intro') {
       const startGame = global.circleSelectCountdown(
         now,
@@ -162,7 +169,10 @@ const game = {
       }
     }
     if (state.mode !== 'score') {
+      game.tickCameraScroll(now, players, state)
+      game.tickLavaWave(now, players, state)
       global.tickPlayers(now, players, state, {noWrap: true})
+      game.tickPlayerScores(now, players, state)
       game.testPlayersAgainstCaveBounds(state)
       game.testPlayersAgainstLavaBounds(state)
       game.tickStars(now, state)
@@ -204,11 +214,27 @@ const game = {
     })
   },
   tickLavaWave: (now, players, state) => {
-    state.meta.lavaWaveVerts.forEach((item, index) => {
-      const frac = index / game.lavaWaveVertCount
-      item[0] = game.getLavaWaveVertXFromFrac(frac, state.meta.tick)
+    state.meta.lavaWaveVerts.forEach((item) => {
+      item[0] = game.getLavaWaveXFromYAndTick(
+        item[1],
+        state.meta.tick
+      )
     })
     state.lavaWave = state.meta.lavaWaveVerts.concat(state.meta.lavaWaveBackPoints)
+  },
+  tickPlayerScores: (now, players, state) => {
+    state.ships.forEach((ship) => {
+      if (!ship.hit) {
+        const lavaWavePositionAtShipY = game.getLavaWaveXFromYAndTick(
+          ship.y,
+          state.meta.tick
+        )
+        const distanceFromLavaWave = Math.abs(ship.x - lavaWavePositionAtShipY)
+        const scoreFrac = global.mapRange(0, game.distanceToLavaWaveScoreFalloff, 1, 0, distanceFromLavaWave)
+        ship.meta.score += scoreFrac * game.distanceToLavaWaveScoreMultiplier
+        ship.score = ship.meta.score.toFixed(1)
+      }
+    })
   },
   testPlayersAgainstCaveBounds: (state) => {
     state.ships.forEach((ship) => {

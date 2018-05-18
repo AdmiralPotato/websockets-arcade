@@ -1,7 +1,7 @@
 global.tau = Math.PI * 2
 global.ticksPerSecond = 100
 global.screenWidth = 2
-global.arrayRemove = function (array, item) {
+global.arrayRemove = (array, item) => {
   let index
   while ((index = array.indexOf(item)) !== -1) {
     array.splice(index, 1)
@@ -77,7 +77,7 @@ global.tickPlayers = (now, players, state, options) => {
 
     ship.x += ship.xVel
     ship.y += ship.yVel
-    if (options && !options.noWrap) {
+    if (!options || !options.noWrap) {
       global.wrap(ship)
     }
   })

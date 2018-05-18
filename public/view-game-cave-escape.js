@@ -54,11 +54,11 @@ window.gameCaveEscapeComponent = {
           v-bind="startCircle"
         />
         <vector-text
-          text="CAVE ESCAPE"
+          text="WAVE RIDER"
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
-          text="escape the lava filling the cave without touching the edges"
+          text="fly near the wave for points, but don't touch it or the walls!"
           :scale="0.01"
           pos="0,-0.6" />
       </g>

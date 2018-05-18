@@ -143,7 +143,10 @@ const manager = {
       radius: manager.shipRadius,
       hue: player.hue,
       hit: false,
-      score: 0
+      score: 0,
+      meta: {
+        score: 0
+      }
     }
   },
   removePlayer: (player) => {

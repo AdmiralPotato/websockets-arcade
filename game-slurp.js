@@ -85,7 +85,8 @@ const game = {
       let playerBubbleIntersection = global.playersInCircle(bubble, players, state)
       if (playerBubbleIntersection.in.length) {
         playerBubbleIntersection.in.forEach((player) => {
-          player.ship.score += game.pointsSlurp
+          player.ship.meta.score += game.pointsSlurp
+          player.ship.score = player.ship.meta.score.toFixed(1)
           bubble.radius -= game.bubbleConsumptionRate
           bubble.hue = player.ship.hue
         })
