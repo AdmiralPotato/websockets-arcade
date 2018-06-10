@@ -38,16 +38,16 @@ const game = {
   },
   populateInitialStars: (state) => {
     while (state.stars.length < game.starMin) {
-      state.stars.push(game.createStar())
+      state.stars.push(game.createStar(state))
     }
   },
-  createStar: () => {
+  createStar: (state) => {
     const radius = global.rangeRand(
       game.starMinRadius,
       game.starMaxRadius
     )
     return {
-      id: 0,
+      id: state.stars.length,
       x: global.rangeRand(-1, 1),
       y: global.rangeRand(-1, 1),
       yVel: radius * -0.05,

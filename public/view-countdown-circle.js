@@ -27,8 +27,7 @@ window.countdownCircleComponent = {
       required: false
     },
     id: {
-      type: [String, Number],
-      default: function () { return window.app.randomHash() }
+      type: [String, Number]
     },
     ticks: {
       type: Number,
@@ -45,21 +44,26 @@ window.countdownCircleComponent = {
     lineHash: function () {
       return '#' + this.lineId
     },
-    outerCircleRadius: function () {
-      return this.radius + 0.025
-    },
-    tickList: function () {
-      return (new Array(this.ticks)).fill('').map((x, i) => this.tickData(i))
+    tickPathData: function () {
+      return (new Array(this.ticks)).fill('').map((x, i) => this.tickData(i)).join(' ')
     }
   },
   methods: {
     tickData: function (i) {
       const frac = (i + 1) / this.ticks
-      return {
-        hash: this.lineHash,
-        on: this.frac && frac > this.frac,
-        transform: `rotate(${(360 * frac) - 90})`
+      let result
+      if (this.frac && frac > this.frac) {
+        const innerRadius = 1
+        const outerRadius = 1.2
+        const angle = (frac * window.tau) - (window.tau / 4)
+        const x = Math.cos(angle)
+        const y = Math.sin(angle)
+        result = [
+          `M ${x * innerRadius},${y * innerRadius}`,
+          `L ${x * outerRadius},${y * outerRadius}`
+        ]
       }
+      return result || []
     }
   },
   template: `
@@ -68,44 +72,28 @@ window.countdownCircleComponent = {
       :class="{
         hit: hit
       }"
-      :transform="'translate(' + x + ', ' + y + ')'"
+      :transform="'translate(' + x + ', ' + y + '), scale(' + radius + ')'"
       :style="color"
     >
-      <defs>
-        <line
-          :id="lineId"
-          :x1="radius"
-          y1="0"
-          :x2="outerCircleRadius"
-          y2="0"
-          class="countdown-tick"
-        />
-      </defs>
       <vector-text
         v-if="label"
         :text="label.toString()"
-        :scale="0.01"
-        :pos="'0,' + (-0.06 - outerCircleRadius)"
+        :scale="0.08"
+        pos="0,-1.675"
       />
       <vector-text
         v-if="sec"
         :text="sec.toString()"
-        :scale="0.02"
+        :scale="0.15"
       />
-      <g class="ticks">
-        <use
-          v-for="tick in tickList"
-          v-if="tick.on"
-          :xlink:href="tick.hash"
-          :transform="tick.transform"
-        />
-      </g>
-      <circle
-        :r="radius"
+      <path
+        class="countdown-tick"
+        :d="tickPathData"
       />
+      <circle r="1" />
       <circle
         v-if="frac"
-        :r="outerCircleRadius"
+        r="1.2"
       />
     </g>
   `
