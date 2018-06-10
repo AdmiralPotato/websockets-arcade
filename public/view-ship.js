@@ -1,5 +1,3 @@
-window.tau = Math.PI * 2
-
 window.shipComponent = {
   props: {
     id: String,
