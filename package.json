@@ -35,18 +35,18 @@
     "node": "8.x"
   },
   "dependencies": {
-    "dotenv": "^4.0.0",
-    "express": "^4.16.2",
-    "gl-matrix": "^2.4.0",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.3",
+    "gl-matrix": "^2.6.1",
     "morgan": "^1.9.0",
-    "nipplejs": "^0.6.8",
+    "nipplejs": "^0.7.1",
     "point-in-polygon": "^1.0.1",
-    "socket.io": "^2.0.4",
-    "vue": "^2.5.3"
+    "socket.io": "^2.1.1",
+    "vue": "^2.5.16"
   },
   "devDependencies": {
-    "eslint-config-standard": "^10.2.1",
-    "nodemon": "^1.12.5",
-    "standard": "^10.0.3"
+    "eslint-config-standard": "^11.0.0",
+    "nodemon": "^1.17.5",
+    "standard": "^11.0.1"
   }
 }
