@@ -149,8 +149,8 @@ global.totalPlayerScores = (players, state) => {
   let shipCount = state.ships.length
   let scores = []
   state.ships.forEach((ship, index) => {
-    highScore = Math.max(highScore, ship.score)
-    scores[index] = ship.score
+    highScore = Math.max(highScore, parseFloat(ship.score))
+    scores[index] = parseFloat(ship.score)
     ship.score = 0
     ship.hit = false
   })
