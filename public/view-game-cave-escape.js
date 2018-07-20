@@ -33,7 +33,7 @@ window.gameCaveEscapeComponent = {
             <use xlink:href="#track" transform="scale(1.2)" />
           </clipPath>
         </defs>
-        <g clip-path="url(#clipping-track-foreground)">
+        <g>
           <g class="stars hit">
             <star
               v-for="item in stars"
@@ -58,7 +58,7 @@ window.gameCaveEscapeComponent = {
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
-          text="fly near the wave for points, but don't touch it or the walls!"
+          text="fly near the lava wave to collect thermal energy,\nand don't crash into the cave walls!"
           :scale="0.01"
           pos="0,-0.6" />
       </g>
@@ -75,7 +75,7 @@ window.gameCaveEscapeComponent = {
         v-if="mode === 'score'"
       >
         <vector-text
-          text="CAVE ESCAPED!"
+          text="TOTAL HEAT"
           :scale="0.04"
           pos="0,-0.8" />
         <vector-text
@@ -84,7 +84,7 @@ window.gameCaveEscapeComponent = {
           :scale="0.01"
           pos="0,-0.5" />
         <vector-text
-          text="LET'S SEE WHO BURNED LEAST!"
+          text="WHO COLLECTED THE MOST THERMAL ENERGY???"
           :scale="0.01"
           pos="0,-0.6" />
       </g>

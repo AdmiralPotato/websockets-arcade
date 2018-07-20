@@ -71,7 +71,7 @@ const manager = {
       }
     }
     manager.state.ships.forEach((ship, index) => {
-      ship.score = index * 5
+      ship.score = index * 5.1 - 5
     })
     manager.state.ships.sort(() => (Math.random() - 0.5)).sort(() => (Math.random() - 0.5))
   },

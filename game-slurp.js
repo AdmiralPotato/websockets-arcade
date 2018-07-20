@@ -30,6 +30,7 @@ const game = {
     })
     game.populateInitialBubbles(state)
     state.ships.forEach(ship => {
+      ship.meta.score = 0
       ship.score = 0
       players[ship.id].lastActiveTime = now
     })
@@ -39,6 +40,7 @@ const game = {
     state.startCircle = undefined
     game.populateInitialBubbles(state)
     state.ships.forEach(ship => {
+      ship.meta.score = 0
       ship.score = 0
     })
     state.events.emit('start')

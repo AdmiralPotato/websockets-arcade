@@ -30,9 +30,12 @@ global.getDistance = (a, b) => {
   return global.getLength(diffX, diffY)
 }
 global.getLength = (x, y) => { return Math.sqrt((x * x) + (y * y)) }
+global.wrapAxis = (n) => {
+  return (Math.abs(n) < 1) ? n : n + (Math.sign(n) * -2)
+}
 global.wrap = (target) => {
-  target.x = (Math.abs(target.x) > 1 ? -1 * Math.sign(target.x) : target.x) || 0
-  target.y = (Math.abs(target.y) > 1 ? -1 * Math.sign(target.y) : target.y) || 0
+  target.x = global.wrapAxis(target.x)
+  target.y = global.wrapAxis(target.y)
 }
 global.randomEdgePosition = () => {
   const angle = Math.random() * global.tau
@@ -147,11 +150,10 @@ global.totalPlayerScores = (players, state) => {
   state.timer = global.durationScore
   let highScore = 0
   let shipCount = state.ships.length
-  let scores = []
-  state.ships.forEach((ship, index) => {
-    highScore = Math.max(highScore, parseFloat(ship.score))
-    scores[index] = parseFloat(ship.score)
-    ship.score = 0
+  const shipStartYPosition = 0.8
+  state.ships.forEach((ship) => {
+    ship.score = parseFloat(ship.score) || 0 // NaN protection
+    highScore = Math.max(highScore, ship.score)
     ship.hit = false
   })
   highScore = highScore || 1 // protect against division by 0 if all players score 0
@@ -160,16 +162,17 @@ global.totalPlayerScores = (players, state) => {
   snapshots.shipStateA.forEach((ship, index) => {
     ship.score = 0
     ship.x = (((index + 0.5) / shipCount) - 0.5) * (0.8 * 2)
-    ship.y = 0.8
+    ship.y = shipStartYPosition
     ship.angle = global.tau * 0.75
   })
   snapshots.shipStateC = JSON.parse(JSON.stringify(snapshots.shipStateA))
   const mapY = (score) => {
-    return 0.8 - (score / highScore)
+    return shipStartYPosition - (score / highScore)
   }
   const yMax = mapY(highScore)
   snapshots.shipStateC.forEach((ship, index) => {
-    ship.score = scores[index]
+    ship.score = state.ships[index].score
+    state.ships[index].score = 0
     ship.scoreMax = highScore
     ship.y = mapY(ship.score)
     ship.yMax = yMax
@@ -219,8 +222,23 @@ global.lerpShips = (state, startState, targetState, progress) => {
     const b = targetState[index]
     if (a !== undefined && b !== undefined) {
       global.lerpShip(ship, a, b, progress)
+      global.wrap(ship)
     }
   })
+}
+global.lerpButStopEarly = (a, b, progress, earlyStop) => {
+  const rateOfChangeFromStart = global.lerp(
+    a,
+    b,
+    progress
+  ) - a
+  const destinationDistanceFromStart = earlyStop - a
+  return a + (
+    Math.min(
+      Math.abs(rateOfChangeFromStart),
+      Math.abs(destinationDistanceFromStart)
+    ) * Math.sign(destinationDistanceFromStart)
+  )
 }
 global.lerpShip = (target, a, b, progress) => {
   target.x = global.lerp(a.x, b.x, progress)
@@ -229,7 +247,18 @@ global.lerpShip = (target, a, b, progress) => {
     target.y = global.lerp(a.y, b.y, progress)
     target.score = Math.floor(global.lerp(a.score, b.score, progress))
   } else {
-    target.y = Math.max(b.y, global.lerp(a.y, b.yMax, progress))
-    target.score = Math.min(b.score, Math.floor(global.lerp(a.score, b.scoreMax, progress)))
+    target.y = global.lerpButStopEarly(
+      a.y,
+      b.yMax,
+      progress,
+      b.y
+    )
+    const scoreLerp = global.lerpButStopEarly(
+      a.score,
+      b.scoreMax,
+      progress,
+      b.score
+    )
+    target.score = b.score !== scoreLerp ? Math.floor(scoreLerp) : b.score
   }
 }
