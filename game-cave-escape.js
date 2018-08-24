@@ -81,14 +81,18 @@ const game = {
     })
     game.createRandomTrackVerts(state)
     game.createLavaWave(state)
+    game.tickCameraScroll(0, players, state)
   },
   changeModeToPlay: (players, state) => {
+    const now = Date.now()
     delete state.startCircle
     state.mode = 'play'
     state.timer = game.durationPlay
+    state.meta.tick = 0
     state.ships.forEach(ship => {
       ship.meta.score = 0
       ship.score = 0
+      players[ship.id].lastActiveTime = now
     })
     state.events.emit('start')
   },
@@ -103,6 +107,16 @@ const game = {
     const count = countSegmentsScreenWillPanOver + game.segmentsPerScreenWidth
     let verts = []
     let radii = []
+
+    verts.push([-0.75, 0])
+    radii.push(0.25)
+    verts.push([-0.5, 0])
+    radii.push(0.5)
+    verts.push([0.25, 0])
+    radii.push(0.5)
+    verts.push([1, 0])
+    radii.push(0)
+
     while (verts.length < count) {
       const i = verts.length
       const radius = global.rangeRand(game.caveRadiusMin, game.caveRadiusMax)
@@ -168,8 +182,10 @@ const game = {
         game.changeModeToPlay(players, state)
       }
     }
-    if (state.mode !== 'score') {
+    if (state.mode !== 'score' && state.mode !== 'intro') {
       game.tickCameraScroll(now, players, state)
+    }
+    if (state.mode !== 'score') {
       game.tickLavaWave(now, players, state)
       global.tickPlayers(now, players, state, {noWrap: true})
       game.tickPlayerScores(now, players, state)
@@ -187,9 +203,6 @@ const game = {
       global.animatePlayerScores(players, state)
     }
     state.meta.tick += 1
-    if (state.meta.tick >= game.durationPlay) {
-      state.meta.tick = 0
-    }
     return state
   },
   tickCameraScroll: (now, players, state) => {
