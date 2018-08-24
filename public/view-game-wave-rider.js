@@ -1,4 +1,4 @@
-window.gameCaveEscapeComponent = {
+window.gameWaveRiderComponent = {
   props: {
     mode: String,
     timer: Number,
@@ -20,7 +20,7 @@ window.gameCaveEscapeComponent = {
     }
   },
   template: `
-    <g class="game-cave-escape">
+    <g class="game-wave-rider">
       <g
         v-if="track"
         class="track"

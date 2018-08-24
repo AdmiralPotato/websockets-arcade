@@ -4,7 +4,7 @@ const gameMap = {
   'select': require('./game-select.js'),
   'meteor-collect': require('./game-meteor-collect.js'),
   'cosmic-dash': require('./game-cosmic-dash.js'),
-  'cave-escape': require('./game-wave-rider.js'),
+  'wave-rider': require('./game-wave-rider.js'),
   'slurp': require('./game-slurp.js')
 }
 
@@ -54,7 +54,7 @@ const manager = {
     )
     manager.state.events.on('start', manager.onGameStart)
     manager.state.events.on('end', manager.onGameEnd)
-    manager.activateGame('cave-escape')
+    manager.activateGame('wave-rider')
   },
   activateGame: (gameName) => {
     console.log('Activating Game:', gameName)
