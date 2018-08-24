@@ -18,7 +18,7 @@ const game = {
           return global.createActivityCircle({
             id,
             label,
-            x: (((index + 0.5) / list.length) - 0.5) * (0.8 * 2),
+            x: (((index + 0.5) / list.length) - 0.5) * (0.95 * 2),
             y: 0.8,
             ticksToActivate: 3 * global.ticksPerSecond
           })
