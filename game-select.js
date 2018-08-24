@@ -3,7 +3,7 @@ const game = {
     // 'select': 'SELECT SCREEN',
     'meteor-collect': 'Meteor Collect',
     'cosmic-dash': 'Cosmic Dash',
-    'cave-escape': 'Cave Escape',
+    'cave-escape': 'Wave Rider',
     'slurp': 'Slurp'
   },
   starMin: 30,

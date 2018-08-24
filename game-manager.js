@@ -4,7 +4,7 @@ const gameMap = {
   'select': require('./game-select.js'),
   'meteor-collect': require('./game-meteor-collect.js'),
   'cosmic-dash': require('./game-cosmic-dash.js'),
-  'cave-escape': require('./game-cave-escape.js'),
+  'cave-escape': require('./game-wave-rider.js'),
   'slurp': require('./game-slurp.js')
 }
 
