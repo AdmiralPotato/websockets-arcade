@@ -12,6 +12,7 @@ window.Vue.component('game-cosmic-dash', window.gameCosmicDashComponent)
 window.Vue.component('game-wave-rider', window.gameWaveRiderComponent)
 window.Vue.component('game-slurp', window.gameSlurpComponent)
 window.Vue.component('game-select', window.gameSelectComponent)
+window.Vue.component('game-name-entry', window.gameNameEntryComponent)
 window.Vue.component('main-view', window.mainViewComponent)
 
 window.app = {

@@ -2,6 +2,7 @@ require('./game-globals')
 const EventEmitter = require('events')
 const gameMap = {
   'select': require('./game-select.js'),
+  'name-entry': require('./game-name-entry.js'),
   'meteor-collect': require('./game-meteor-collect.js'),
   'cosmic-dash': require('./game-cosmic-dash.js'),
   'wave-rider': require('./game-wave-rider.js'),
@@ -54,7 +55,7 @@ const manager = {
     )
     manager.state.events.on('start', manager.onGameStart)
     manager.state.events.on('end', manager.onGameEnd)
-    manager.activateGame('select')
+    manager.activateGame('name-entry')
   },
   activateGame: (gameName) => {
     console.log('Activating Game:', gameName)
