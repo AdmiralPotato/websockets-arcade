@@ -146,7 +146,9 @@ const manager = {
       hit: false,
       score: 0,
       meta: {
-        score: 0
+        timer: 0,
+        score: 0,
+        name: ''
       }
     }
   },
