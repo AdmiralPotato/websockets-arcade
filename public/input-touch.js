@@ -6,7 +6,6 @@ const joystickOptions = {
   multitouch: false,
   maxNumberOfNipples: 1,
   dataOnly: false,
-  mode: 'semi',
   restOpacity: 0.125
 }
 
