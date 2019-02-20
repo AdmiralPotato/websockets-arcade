@@ -182,30 +182,30 @@ const detectNeedForResize = () => {
   }
   return needsResize
 }
-const mat4perspective = window.mat4.create()
+const mat4perspective = window.glMatrix.mat4.create()
 const resize = (width, height) => {
   const aspect = width / height
   const desiredMinimumFov = Math.PI / 2
   const fovY = aspect >= 1 ? desiredMinimumFov : 2 * Math.atan(Math.tan(desiredMinimumFov / 2) / aspect)
-  console.log('resize:', {width, height})
+  console.log('resize:', { width, height })
   canvas.width = width
   canvas.height = height
   gl.viewport(0, 0, width, height)
-  window.mat4.perspective(
+  window.glMatrix.mat4.perspective(
     mat4perspective,
     fovY,
     aspect,
     0.1,
     100.0
   )
-  window.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
+  window.glMatrix.mat4.mul(mat4perspective, mat4perspective, mat4perspectiveTransform)
 }
-const mat4boundingTransform = window.mat4.create()
-const mat4perspectiveTransform = window.mat4.fromTranslation(
-  window.mat4.create(),
-  window.vec3.fromValues(0, 0, -1)
+const mat4boundingTransform = window.glMatrix.mat4.create()
+const mat4perspectiveTransform = window.glMatrix.mat4.fromTranslation(
+  window.glMatrix.mat4.create(),
+  window.glMatrix.vec3.fromValues(0, 0, -1)
 )
-const mat4transform = window.mat4.create()
+const mat4transform = window.glMatrix.mat4.create()
 const defaultColor = [1.0, 1.0, 1.0, 1.0]
 const baseColor = [0.5, 0.5, 0.5, 1.0]
 const starColor = [0.25, 0.25, 0.25, 1.0]
@@ -276,26 +276,26 @@ const drawScene = () => {
   }
 }
 const makeTransformsFromGameObject = (
-  outMatrix = window.mat4.create(),
+  outMatrix = window.glMatrix.mat4.create(),
   gameObject
 ) => {
-  window.mat4.identity(outMatrix)
-  window.mat4.translate(
+  window.glMatrix.mat4.identity(outMatrix)
+  window.glMatrix.mat4.translate(
     outMatrix,
     outMatrix,
-    window.vec3.fromValues(gameObject.x, -gameObject.y, 0)
+    window.glMatrix.vec3.fromValues(gameObject.x, -gameObject.y, 0)
   )
   if (gameObject.angle) {
-    window.mat4.rotateZ(
+    window.glMatrix.mat4.rotateZ(
       outMatrix,
       outMatrix,
       -gameObject.angle
     )
   }
-  window.mat4.scale(
+  window.glMatrix.mat4.scale(
     outMatrix,
     outMatrix,
-    window.vec3.fromValues(gameObject.radius, gameObject.radius, gameObject.radius)
+    window.glMatrix.vec3.fromValues(gameObject.radius, gameObject.radius, gameObject.radius)
   )
   return outMatrix
 }
@@ -309,7 +309,7 @@ const renderShapeBuffer = (config) => {
   gl.uniformMatrix4fv(
     shaderProgram.u_mat4transform,
     false,
-    config.transform || window.mat4.identity()
+    config.transform || window.glMatrix.mat4.identity()
   )
   gl.uniform4fv(shaderProgram.u_color, config.color || [1, 1, 1, 1])
   bindShapeBuffer(config.shapeBuffer)
@@ -358,7 +358,7 @@ const renderArrayBuffer = (config) => {
   gl.uniformMatrix4fv(
     shaderProgram.u_mat4transform,
     false,
-    config.transform || window.mat4.identity()
+    config.transform || window.glMatrix.mat4.identity()
   )
   gl.uniform4fv(shaderProgram.u_color, config.color || defaultColor)
   bindArrayBuffer(config.arrayBuffer)

@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000
 const clientDependencyMap = {
   '/vue': 'node_modules/vue/dist',
   '/nipplejs': 'node_modules/nipplejs/dist',
-  '/gl-matrix': 'node_modules/gl-matrix/dist'
+  '/gl-matrix': 'node_modules/gl-matrix'
 }
 
 // create a write stream (in append mode)
