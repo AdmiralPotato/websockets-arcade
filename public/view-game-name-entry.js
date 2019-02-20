@@ -24,7 +24,7 @@ window.gameNameEntryComponent = {
         <g
           :transform="'translate(' + item.x + ', ' + item.y + ')'"
         >
-          <circle
+          <path-circle
             :class="{hit: !item.hit}"
             :r="item.radius"
           />

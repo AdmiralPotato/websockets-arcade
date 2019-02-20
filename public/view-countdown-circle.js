@@ -90,10 +90,10 @@ window.countdownCircleComponent = {
         class="countdown-tick"
         :d="tickPathData"
       />
-      <circle r="1" />
-      <circle
+      <path-circle :r="1" />
+      <path-circle
         v-if="frac"
-        r="1.2"
+        :r="1.2"
       />
     </g>
   `

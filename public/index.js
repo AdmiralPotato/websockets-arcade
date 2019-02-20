@@ -1,5 +1,6 @@
 window.Vue.component('vector-text-defs', window.vectorTextDefsComponent)
 window.Vue.component('vector-text', window.vectorTextComponent)
+window.Vue.component('path-circle', window.pathCircleComponent)
 window.Vue.component('countdown-circle', window.countdownCircleComponent)
 window.Vue.component('star', window.starComponent)
 window.Vue.component('ship', window.shipComponent)

@@ -64,11 +64,11 @@ const manager = {
     manager.currentGame.activate(manager.players, manager.state)
   },
   initFakePlayersForTesting: function () {
-    let fakeSocket = {id: 'fakeSocket', players: {}, emit () {}}
+    let fakeSocket = { id: 'fakeSocket', players: {}, emit () {} }
     for (let i = 0; i < 8; i++) {
       const id = i.toFixed(2)
       if (!manager.players[id]) {
-        manager.addPlayer(fakeSocket, {hue: i * 45, id: id})
+        manager.addPlayer(fakeSocket, { hue: i * 45, id: id })
       }
     }
     manager.state.ships.forEach((ship, index) => {
@@ -89,7 +89,7 @@ const manager = {
   },
   onGameEnd: (e) => {
     const nextGame = e || 'select'
-    console.log('manager.onGameEnd', {nextGame})
+    console.log('manager.onGameEnd', { nextGame })
     manager.activateGame(nextGame)
   },
   filterProps: [

@@ -87,7 +87,7 @@ window.colorPickerComponent = {
           :style="getColorStyle(selectedHue)"
           @click="selectColor"
         >
-          <circle r="1.25" style="fill: none; stroke: none;"/>
+          <rect width="2.5" height="2.5" x="-1.25" y="-1.25" style="fill: transparent; stroke: none;"/>
           <use xlink:href="#ship" />
         </g>
       </g>
