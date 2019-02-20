@@ -1,47 +1,46 @@
 // const charString = `!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_\`abcdefghijklmnopqrstuvwxyz{|}~`
 const charString = `
-!$*-.?@^_~
-0123456789
-ABCDEFGHIJ
-KLMNOPQRST
-UVWXYZ`
-let chars = []
-const input = [
-  ...charString.split('\n')
-]
-input.forEach((line, y) => {
-  [...line].forEach((char, x) => {
-    if (char !== '\n') {
-      chars.push({
-        x: (x / 5.5) + (1 / 5.5) - 1,
-        y: (y / 5.5) + (1 / 2.5) - 1,
-        char
-      })
-    }
-  })
-})
+ABCDEFG
+HIJKLMN
+OPQRSTU
+VWXYZ
+`
 
-chars.push({
-  x: -0.4,
-  y: 0.65,
-  char: 'bksp'
-})
-chars.push({
-  x: 0.4,
-  y: 0.65,
-  char: 'done'
-})
-
-const charRadius = 0.01
-const appChars = chars.map((item) => {
-  return {
-    ...item,
-    radius: charRadius
-  }
-})
 const game = {
-  charRadius,
   activate: (players, state) => {
+    let chars = []
+    let input = [
+      ...charString.split('\n')
+    ]
+    input.shift()
+    const gridWidth = 1.95
+    const gridOffset = gridWidth / 2
+    let charSpacing = gridWidth / input[0].length
+    let charOffset = charSpacing / 2
+    input.forEach((line, y) => {
+      [...line].forEach((char, x) => {
+        chars.push({
+          x: (x * charSpacing) - gridOffset + charOffset,
+          y: (y * charSpacing) - 0.55,
+          radius: 0.04,
+          char
+        })
+      })
+    })
+
+    const charRadius = 0.0125
+    chars.push({
+      x: -0.4,
+      y: 0.8,
+      radius: charRadius * 8,
+      char: 'bksp'
+    })
+    chars.push({
+      x: 0.4,
+      y: 0.8,
+      radius: charRadius * 8,
+      char: 'done'
+    })
     Object.assign(
       state,
       {
@@ -66,15 +65,19 @@ const game = {
     return state
   },
   checkCharCollision: (now, players, state) => {
+    state.chars.forEach((item) => {
+      delete item.hit
+    })
     state.ships.forEach(ship => {
       let hitThisFrame = false
       if (!ship.meta.done) {
-        for (let i = 0; i < appChars.length; i++) {
-          const item = appChars[i]
+        for (let i = 0; i < state.chars.length; i++) {
+          const item = state.chars[i]
           if (
             global.detectCollision(item, ship)
           ) {
             hitThisFrame = true
+            item.hit = true
             if (!ship.meta.charHit) {
               if (
                 ship.meta.name.length &&

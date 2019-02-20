@@ -14,15 +14,26 @@ window.gameNameEntryComponent = {
       <vector-text
         text="ENTER YOUR NAME"
         :scale="0.04"
-        pos="0,-0.8" />
-      <g class="chars">
-        <vector-text
-          v-for="(item, index) in chars"
-          class="text-timer"
-          :key="item.char"
-          :text="item.char"
-          :scale="charRadius"
-          :pos="item.x + ',' + item.y" />
+        pos="0,-0.8"
+      />
+      <g
+        class="chars"
+        v-for="(item, index) in chars"
+        :key="item.char"
+      >
+        <g
+          :transform="'translate(' + item.x + ', ' + item.y + ')'"
+        >
+          <circle
+            :class="{hit: !item.hit}"
+            :r="item.radius"
+          />
+          <vector-text
+            class="text-timer"
+            :text="item.char"
+            :scale="charRadius"
+          />
+        </g>
       </g>
     </g>
   `
