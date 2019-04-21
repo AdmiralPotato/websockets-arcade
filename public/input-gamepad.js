@@ -60,7 +60,7 @@ const gamepadEvents = {
   }
 }
 
-const deadzone = 0.001
+const deadzone = 0.05
 gamepadEvents.addEventListener('change', (event) => {
   const controller = gamepadEvents.controllers[event.id] = gamepadEvents.controllers[event.id] || {
     id: event.id,
@@ -84,11 +84,17 @@ gamepadEvents.addEventListener('change', (event) => {
       gamepadEvents.fire('move', controller)
     }
   }
-  if (!controller.start && event.buttons[9]) {
-    controller.start = true
+  const buttonsToStart = (
+    event.buttons[0] || // A & ❌
+    event.buttons[1] || // B & ⏺
+    event.buttons[2] || // X & ■
+    event.buttons[3] || // Y & ▲
+    event.buttons[9] // Start
+  )
+  if (!controller.start && buttonsToStart) {
     gamepadEvents.fire('start', controller)
   }
-  controller.start = event.buttons[9]
+  controller.start = buttonsToStart
 })
 
 gamepadSampler.init()
