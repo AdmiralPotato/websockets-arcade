@@ -30,9 +30,12 @@ window.mainViewComponent = {
           <ship
             v-for="ship in state.ships"
             v-bind="ship"
-            :isPlayer="isLocalPlayer(ship)"
+            :isLocalPlayer="isLocalPlayer(ship)"
             :key="ship.id"
-          />
+          >
+            <text slot="above" style="stroke: none; font: normal 0.04px monospace;">bab: {{ship.id}}</text>
+            <text slot="below" style="stroke: none; font: normal 0.04px monospace;">hah: {{ship.id}}</text>
+          </ship>
         </g>
       </g>
       <use xlink:href="#bounding-rect" class="bounding-rect" />

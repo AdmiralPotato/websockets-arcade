@@ -7,7 +7,7 @@ window.shipComponent = {
     playerAngle: Number,
     radius: Number,
     hue: Number,
-    isPlayer: Boolean,
+    isLocalPlayer: Boolean,
     hit: Boolean,
     score: [Number, String]
   },
@@ -35,7 +35,7 @@ window.shipComponent = {
       <g
         class="ship"
         :class="{
-          playerShip: isPlayer,
+          fill: isLocalPlayer,
           hit: hit
         }"
         :transform="'translate(' + x + ', ' + y + ')'"
@@ -52,6 +52,7 @@ window.shipComponent = {
         <g :transform="playerAngleTransforms">
           <use xlink:href="#ship" />
         </g>
+        <use :xlink:href="'#ship-overlay-' + id" />
       </g>
     `
 }
