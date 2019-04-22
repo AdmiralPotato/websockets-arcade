@@ -2,6 +2,7 @@ const game = {
   map: {
     // 'select': 'SELECT SCREEN',
     'meteor-collect': 'Meteor Collect',
+    'galaxy-diner': 'Galaxy Diner',
     'cosmic-dash': 'Cosmic Dash',
     'wave-rider': 'Wave Rider',
     'slurp': 'Slurp'
@@ -10,16 +11,22 @@ const game = {
   starMinRadius: 0.005,
   starMaxRadius: 0.05,
   activate: (players, state) => {
+    const games = Object.entries(game.map)
+    const chunk = 1 / games.length
+    const angleChunk = global.tau * chunk
+    const angleOffset = global.tau * -0.25
+    const gameMenuRadius = 0.5
     Object.assign(
       state,
       {
         stars: [],
-        startCircles: Object.entries(game.map).map(([id, label], index, list) => {
+        startCircles: games.map(([id, label], index, list) => {
+          const angle = (index * angleChunk) + angleOffset
           return global.createActivityCircle({
             id,
             label,
-            x: (((index + 0.5) / list.length) - 0.5) * (0.95 * 2),
-            y: 0.8,
+            x: (Math.cos(angle) * gameMenuRadius),
+            y: (Math.sin(angle) * gameMenuRadius) + 0.3,
             ticksToActivate: 3 * global.ticksPerSecond
           })
         })

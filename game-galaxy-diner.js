@@ -1,7 +1,37 @@
 const game = {
+  durationPlay: 45 * global.ticksPerSecond, // ticks are every 10ms
   symbols: ['▲', '■', '⏺'],
   maxIngredients: 4,
   activate: (players, state) => {
+    game.changeModeToIntro(players, state)
+  },
+  changeModeToIntro: (players, state) => {
+    const now = Date.now()
+    state.mode = 'intro'
+    state.timer = game.durationPlay
+    game.populateInitialPartsAndOrders(state)
+    state.startCircle = global.createActivityCircle({
+      label: 'Start',
+      y: 0.8,
+      x: -0.8
+    })
+    state.ships.forEach(ship => {
+      ship.score = 0
+      ship.recipe = ''
+      players[ship.id].lastActiveTime = now
+    })
+  },
+  changeModeToPlay: (players, state) => {
+    state.mode = 'play'
+    state.startCircle = undefined
+    game.populateInitialPartsAndOrders(state)
+    state.ships.forEach(ship => {
+      ship.score = 0
+      ship.recipe = ''
+    })
+    state.events.emit('start')
+  },
+  populateInitialPartsAndOrders (state) {
     let radius = 0.05
     let y = 0.3333
     const served = false
@@ -53,21 +83,42 @@ const game = {
         radius
       })
     }
-    game.changeModeToIntro(players, state)
   },
-  changeModeToIntro: (players, state) => {
-    const now = Date.now()
-    state.mode = 'intro'
+  changeModeToScore: (players, state) => {
+    delete state.parts
+    delete state.orders
     state.ships.forEach(ship => {
-      ship.score = 0
-      ship.recipe = ''
-      players[ship.id].lastActiveTime = now
+      delete ship.recipe
     })
+    global.totalPlayerScores(players, state)
   },
   tickGame: (now, players, state) => {
-    global.tickPlayers(now, players, state)
-    game.tickOrders(now, players, state)
-    game.checkCollisions(now, players, state)
+    if (state.mode !== 'score') {
+      global.tickPlayers(now, players, state)
+      game.tickOrders(now, players, state)
+      game.checkCollisions(now, players, state)
+    }
+    if (state.mode === 'intro') {
+      let startGame = global.circleSelectCountdown(
+        now,
+        state.startCircle,
+        players,
+        state,
+        true
+      )
+      if (startGame) {
+        game.changeModeToPlay(players, state)
+      }
+    }
+    if (state.mode === 'play') {
+      state.timer -= 1
+      if (state.timer <= 0) {
+        game.changeModeToScore(players, state)
+      }
+    }
+    if (state.mode === 'score') {
+      global.animatePlayerScores(players, state)
+    }
     return state
   },
   makeRandomRecipe: () => {

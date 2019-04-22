@@ -2,8 +2,8 @@ const game = {
   meteorRadiusMin: 1 / 100,
   meteorRadiusMax: 1 / 10,
   meteorRadiusConsumable: 1 / 50,
-  asteroidMinSpeed: 1 / 8000,
-  asteroidMaxSpeed: 1 / 700,
+  meteorMinSpeed: 1 / 8000,
+  meteorMaxSpeed: 1 / 700,
   meteorVolumeMax: 0.5,
   meteorCooldownDefault: 25,
   meteorCooldown: 25,
@@ -142,7 +142,7 @@ const game = {
     radius = global.rangeRand(game.meteorRadiusMin, game.meteorRadiusMax)
   ) => {
     const angle = Math.random() * global.tau
-    const speed = global.rangeRand(game.asteroidMinSpeed, game.asteroidMaxSpeed)
+    const speed = global.rangeRand(game.meteorMinSpeed, game.meteorMaxSpeed)
     const id = game.meteorLastId += 1
     if (x === null || y === null) {
       const edgePosition = global.randomEdgePosition()

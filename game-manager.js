@@ -56,7 +56,7 @@ const manager = {
     )
     manager.state.events.on('start', manager.onGameStart)
     manager.state.events.on('end', manager.onGameEnd)
-    manager.activateGame('galaxy-diner')
+    manager.activateGame('select')
   },
   activateGame: (gameName) => {
     console.log('Activating Game:', gameName)
