@@ -3,6 +3,7 @@ const game = {
     // 'select': 'SELECT SCREEN',
     'meteor-collect': 'Meteor Collect',
     'galaxy-diner': 'Galaxy Diner',
+    'dragons-hoard': 'Dragon\'s Hoard',
     'cosmic-dash': 'Cosmic Dash',
     'wave-rider': 'Wave Rider',
     'slurp': 'Slurp'

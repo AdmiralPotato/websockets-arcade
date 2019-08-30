@@ -4,6 +4,7 @@ const gameMap = {
   'select': require('./game-select.js'),
   'name-entry': require('./game-name-entry.js'),
   'galaxy-diner': require('./game-galaxy-diner.js'),
+  'dragons-hoard': require('./game-dragons-hoard.js'),
   'meteor-collect': require('./game-meteor-collect.js'),
   'cosmic-dash': require('./game-cosmic-dash.js'),
   'wave-rider': require('./game-wave-rider.js'),
@@ -56,7 +57,7 @@ const manager = {
     )
     manager.state.events.on('start', manager.onGameStart)
     manager.state.events.on('end', manager.onGameEnd)
-    manager.activateGame('select')
+    manager.activateGame('dragons-hoard')
   },
   activateGame: (gameName) => {
     console.log('Activating Game:', gameName)

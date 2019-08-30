@@ -17,6 +17,7 @@ window.Vue.component('game-name-entry', window.gameNameEntryComponent)
 window.Vue.component('galaxy-diner-recipe', window.gameGalaxyDinerRecipeComponent)
 window.Vue.component('galaxy-diner-order', window.gameGalaxyDinerOrderComponent)
 window.Vue.component('game-galaxy-diner', window.gameGalaxyDinerComponent)
+window.Vue.component('game-dragons-hoard', window.gameDragonsHoardComponent)
 window.Vue.component('main-view', window.mainViewComponent)
 
 window.app = {
