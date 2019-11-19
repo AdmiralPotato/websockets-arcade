@@ -3,9 +3,17 @@
 const gamepadSampler = {
   controllers: {},
   sample: function () {
-    const gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : [])
+    const gamepads = []
+    const gamepadList = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : [])
+    // even though the list reports a length of N, some of those items null? wtf chrome > 73
+    for (let i = 0; i < gamepadList.length; i++) {
+      const gamepad = gamepadList.item(i)
+      if (gamepad) {
+        gamepads.push(gamepad)
+      }
+    }
     let gamepadsSampled = 0
-    Object.entries(gamepads).forEach(([index, gamepad]) => {
+    gamepads.forEach((gamepad) => {
       if (gamepad && gamepad.mapping === 'standard') {
         gamepadsSampled += 1
         const id = 'gamepad-' + gamepad.index + '-' + gamepad.id
