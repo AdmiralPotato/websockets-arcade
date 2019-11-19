@@ -2,16 +2,27 @@ const inside = require('point-in-polygon')
 
 const game = {
   durationPlay: 45 * global.ticksPerSecond, // ticks are every 10ms
-  symbols: ['▲', '■', '⏺'],
+  treasures: ['▲', '■', '⏺'],
   maxIngredients: 1,
   trackVertRadius: 0.20,
   trackVertCount: 12,
-  trackObstacleSize: 3,
-  dragonRadius: 0.3,
+  trackObstacleSize: 1,
+  treasureVertRadius: 0.3,
+  maxPushSteps: 200,
   dragonVert: [0, 0.125],
   activate: (players, state) => {
+    state.dragonOrder = {
+      recipe: game.makeRandomRecipe(),
+      time: 1,
+      timer: -Math.floor(Math.random() * 100),
+      state: 'in',
+      x: game.dragonVert[0],
+      y: game.dragonVert[1],
+      radius: game.treasureVertRadius
+    }
     state.track = {
       radius: game.trackVertRadius,
+      staticRadius: game.treasureVertRadius,
       verts: [],
       innerPoly: [],
       outerPoly: [],
@@ -19,7 +30,8 @@ const game = {
       isValid: false,
       meta: {
         quads: [],
-        playerQuadBooleanStates: {}
+        playerQuadBooleanStates: {},
+        pushSteps: game.maxPushSteps
       }
     }
     game.changeModeToIntro(players, state)
@@ -28,7 +40,6 @@ const game = {
     const now = Date.now()
     state.mode = 'intro'
     state.timer = game.durationPlay
-    game.populateInitialPartsAndOrders(state)
     state.startCircle = global.createActivityCircle({
       label: 'Start',
       y: 0,
@@ -43,10 +54,9 @@ const game = {
     game.createRandomTrackVerts(state)
   },
   createRandomTrackVerts: (state) => {
-    const count = game.trackVertCount
     const verts = []
-    while (verts.length < count) {
-      const angle = (verts.length / count) * global.tau
+    while (verts.length < game.trackVertCount) {
+      const angle = (verts.length / game.trackVertCount) * global.tau
       const radius = global.rangeRand(
         0.2,
         1 - (game.trackVertRadius * 1.5)
@@ -56,7 +66,16 @@ const game = {
         Math.sin(angle) * radius
       ])
     }
+    const treasureVerts = []
+    while (treasureVerts.length < game.treasures.length) {
+      const edgeVert = global.randomEdgePosition()
+      treasureVerts.push([
+        edgeVert.x,
+        edgeVert.y
+      ])
+    }
     state.track.verts = verts
+    state.track.treasureVerts = treasureVerts
     game.centerTrackVerts(state)
   },
   centerTrackVerts: (state) => {
@@ -82,20 +101,14 @@ const game = {
       ]
     })
   },
-  inflateTrack: (state) => {
-    const verts = state.track.verts
-    const stepSize = game.trackVertRadius / 200
-    const pointVsPointRadius = game.trackVertRadius * 2
-    const pointVsDragonRadius = game.trackVertRadius + game.dragonRadius
+  repelVertsFromEachother: (verts, velocities, radius, stepSize) => {
     const allButLast = verts.slice(0, -1)
-    const velocities = verts.map(() => [0, 0])
     let anyCollisions = false
-    // move the points away from each other first
     allButLast.forEach((a, indexA) => {
       const subset = verts.slice(indexA + 1)
       subset.forEach((b, offset) => {
         const indexB = indexA + 1 + offset
-        const comparison = game.comparePoints(a, b, pointVsPointRadius)
+        const comparison = game.comparePoints(a, b, radius)
         if (comparison.hit) {
           anyCollisions = true
           const velocity = [
@@ -109,35 +122,93 @@ const game = {
         }
       })
     })
-    // now move the points away from the dragon
-    verts.forEach((vert, offset) => {
-      const comparison = game.comparePoints(
-        vert,
-        game.dragonVert,
-        pointVsDragonRadius
-      )
-      if (comparison.hit) {
-        anyCollisions = true
-        const velocity = [
-          Math.cos(comparison.angle) * stepSize * 2,
-          Math.sin(comparison.angle) * stepSize * 2
-        ]
-        velocities[offset][0] += velocity[0]
-        velocities[offset][1] += velocity[1]
-      }
+    return anyCollisions
+  },
+  inflateTrack: (state) => {
+    const stepSize = game.trackVertRadius / 100
+    const verts = state.track.verts
+    const treasureVerts = state.track.treasureVerts
+    const pointVsTreasureVertRadius = game.trackVertRadius + game.treasureVertRadius
+    const velocities = verts.map(() => [0, 0])
+    const treasureVelocities = verts.map(() => [0, 0])
+    let anyCollisions = false
+    // move the points away from each other first
+    anyCollisions = game.repelVertsFromEachother(
+      verts,
+      velocities,
+      game.trackVertRadius * 2,
+      stepSize
+    ) || anyCollisions
+    // move the treasures away from each other next
+    anyCollisions = game.repelVertsFromEachother(
+      treasureVerts,
+      treasureVelocities,
+      game.treasureVertRadius * 2,
+      0.2
+    ) || anyCollisions
+    // now move the points away from the treasureVerts
+    const bigVerts = treasureVerts.slice()
+    bigVerts.push(game.dragonVert)
+    bigVerts.forEach((treasureVert, offset) => {
+      verts.forEach((vert, offset) => {
+        const comparison = game.comparePoints(
+          vert,
+          treasureVert,
+          pointVsTreasureVertRadius
+        )
+        if (comparison.hit) {
+          anyCollisions = true
+          const velocity = [
+            Math.cos(comparison.angle) * stepSize * 2,
+            Math.sin(comparison.angle) * stepSize * 2
+          ]
+          velocities[offset][0] += velocity[0]
+          velocities[offset][1] += velocity[1]
+        }
+      })
     })
+    const boundMin = -1 + game.trackVertRadius
+    const boundMax = 1 - game.trackVertRadius
     state.track.verts = verts.map((a, index) => {
       return [
-        a[0] + velocities[index][0],
-        a[1] + velocities[index][1]
+        global.bound(
+          boundMin,
+          boundMax,
+          a[0] + velocities[index][0]
+        ),
+        global.bound(
+          boundMin,
+          boundMax,
+          a[1] + velocities[index][1]
+        )
+      ]
+    })
+    state.track.treasureVerts = treasureVerts.map((a, index) => {
+      return [
+        global.bound(
+          -1,
+          1,
+          a[0] + treasureVelocities[index][0]
+        ),
+        global.bound(
+          -1,
+          1,
+          a[1] + treasureVelocities[index][1]
+        )
       ]
     })
     game.centerTrackVerts(state)
     game.findTrackVertTangents(state)
+    if (state.track.meta.pushSteps > 1) {
+      state.track.meta.pushSteps -= 0.5
+    } else {
+      anyCollisions = false
+    }
     if (!anyCollisions) {
       state.track.isValid = true
       game.putShipsAtStart(state)
       game.makeObstacles(state)
+      game.populateTreasures(state)
     }
   },
   findTrackVertTangents: (state) => {
@@ -206,69 +277,27 @@ const game = {
   changeModeToPlay: (players, state) => {
     state.mode = 'play'
     state.startCircle = undefined
-    game.populateInitialPartsAndOrders(state)
     state.ships.forEach(ship => {
       ship.score = 0
       ship.recipe = ''
     })
     state.events.emit('start')
   },
-  populateInitialPartsAndOrders (state) {
+  populateTreasures (state) {
     let radius = 0.05
-    let y = 0.3333
-    const served = false
-    state.parts = [ // AKA: ingredients
-      {
-        type: '▲',
-        x: -0.5,
-        y,
-        radius
-      },
-      {
-        type: '■',
-        x: 0,
-        y,
-        radius
-      },
-      {
-        type: '⏺',
-        x: 0.5,
-        y,
-        radius
-      },
-      {
-        type: '←',
-        x: -0.25,
-        y: 0.75,
-        radius
-      },
-      {
-        type: '❌',
-        x: 0.25,
-        y: 0.75,
+    state.parts = state.track.treasureVerts.map((vert, index) => {
+      return {
+        type: game.treasures[index],
+        x: vert[0],
+        y: vert[1],
         radius
       }
-    ]
-    y = -1.25
-    radius = 0.15
-    state.orders = []
-    for (let i = 0; i < 4; i++) {
-      const recipe = game.makeRandomRecipe()
-      state.orders.push({
-        recipe,
-        time: 1,
-        timer: -Math.floor(Math.random() * 100),
-        state: 'in',
-        served,
-        x: -0.75 + (i * 0.5),
-        y,
-        radius
-      })
-    }
+    })
   },
   changeModeToScore: (players, state) => {
     delete state.parts
-    delete state.orders
+    delete state.track
+    delete state.dragonOrder
     state.ships.forEach(ship => {
       delete ship.recipe
     })
@@ -287,8 +316,6 @@ const game = {
     if (state.mode === 'intro') {
       if (!state.track.isValid) {
         game.inflateTrack(state)
-        state.startCircle.x = state.track.verts[3][0]
-        state.startCircle.y = state.track.verts[3][1]
       } else {
         let startGame = global.circleSelectCountdown(
           now,
@@ -302,7 +329,10 @@ const game = {
         }
       }
     }
-    if (state.mode !== 'score') {
+    if (
+      state.mode !== 'score' &&
+      state.track.isValid
+    ) {
       global.tickPlayers(now, players, state)
       game.tickOrders(now, players, state)
       game.testPlayersAgainstTrackPolygons(state)
@@ -346,16 +376,8 @@ const game = {
     })
   },
   makeRandomRecipe: () => {
-    let result = ''
-    const recipeComplexity = Math.floor(
-      global.rangeRand(1, game.maxIngredients + 1)
-    )
-    for (let i = 0; i < recipeComplexity; i++) {
-      const index = Math.floor(global.rangeRand(0, game.symbols.length))
-      const ingredient = game.symbols[index]
-      result += ingredient
-    }
-    return result
+    const index = Math.floor(global.rangeRand(0, game.treasures.length))
+    return game.treasures[index]
   },
   orderChangeTime: 50,
   orderWaitTime: 500,
@@ -401,9 +423,7 @@ const game = {
     }
   },
   tickOrders (now, players, state) {
-    state.orders.forEach((order) => {
-      game.dragonStateHandlerMap[order.state](order)
-    })
+    game.dragonStateHandlerMap[state.dragonOrder.state](state.dragonOrder)
   },
   checkCollisions: (now, players, state) => {
     state.parts.forEach((item) => {
@@ -423,17 +443,7 @@ const game = {
           hitThisFrame = true
           ingredient.hit = true
           if (!ship.meta.ingredientHit) {
-            if (ingredient.type === '←') {
-              let shipIngredients = [...ship.recipe]
-              shipIngredients.pop()
-              ship.recipe = shipIngredients.join('')
-            } else if (ingredient.type === '❌') {
-              ship.recipe = ''
-            } else if (
-              ship.recipe.length < game.maxIngredients
-            ) {
-              ship.recipe += ingredient.type
-            }
+            ship.recipe = ingredient.type
           }
         }
       }
@@ -442,19 +452,15 @@ const game = {
         !hitThisFrame &&
         ship.recipe.length > 0
       ) {
-        for (let i = 0; !hitThisFrame && (i < state.orders.length); i++) {
-          const order = state.orders[i]
-          if (
-            order.state === 'waiting' &&
-            ship.recipe === order.recipe &&
-            global.detectCollision(order, ship)
-          ) {
-            order.served = true
-            ship.recipe = ''
-            ship.score += order.recipe.length
-            hitThisFrame = true
-            order.hit = true
-          }
+        const order = state.dragonOrder
+        if (
+          order.state === 'waiting' &&
+          ship.recipe === order.recipe &&
+          global.detectCollision(order, ship)
+        ) {
+          ship.recipe = ''
+          ship.score += order.recipe.length
+          hitThisFrame = true
         }
       }
       ship.meta.ingredientHit = hitThisFrame

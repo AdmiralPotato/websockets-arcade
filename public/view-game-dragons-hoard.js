@@ -41,6 +41,23 @@ window.gameDragonsHoardComponent = {
           class="bounds inner"
         />
         <polygon :points="track.verts.toString()" class="center" />
+        <g
+          v-if="true || !track.isValid"
+          class="verts"
+        >
+          <vert
+            v-for="(item, index) in track.verts"
+            :pos="item"
+            :key="'a' + index"
+            :radius="track.radius"
+          />
+          <vert
+            v-for="(item, index) in track.treasureVerts"
+            :pos="item"
+            :key="'b' + index"
+            :radius="track.staticRadius"
+          />
+        </g>
       </g>
       <g class="mode-intro"
         v-if="mode === 'intro'"
@@ -66,7 +83,7 @@ window.gameDragonsHoardComponent = {
           :scale="0.01"
           pos="0,-0.9" />
       </g>
-      
+
       <g class="mode-play"
         v-if="mode !== 'score'"
       >
