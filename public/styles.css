@@ -86,6 +86,9 @@ svg .track .cave {
 svg .lava {
   color: #f60;
 }
+svg .dragon {
+  color: #690;
+}
 
 svg .countdown-tick {
   color: currentColor;

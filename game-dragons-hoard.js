@@ -380,7 +380,7 @@ const game = {
     return game.treasures[index]
   },
   orderChangeTime: 50,
-  orderWaitTime: 500,
+  orderWaitTime: 2000,
   orderYIn: -0.25,
   orderYOut: -1.25,
   dragonStateHandlerMap: {
