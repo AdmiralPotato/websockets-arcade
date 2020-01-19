@@ -47,11 +47,11 @@ window.gameDragonsHoardComponent = {
           :points="poly.toString()"
           class="bounds inner"
         />
-        <polygon :points="track.verts.toString()" class="center" />
         <g
-          v-if="true || !track.isValid"
+          v-if="!track.isValid"
           class="verts"
         >
+          <polygon :points="track.verts.toString()" class="center" />
           <vert
             v-for="(item, index) in track.verts"
             :pos="item"

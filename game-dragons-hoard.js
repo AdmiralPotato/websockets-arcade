@@ -285,11 +285,16 @@ const game = {
   },
   populateTreasures (state) {
     let radius = 0.05
+    let distanceFromEdge = game.treasureVertRadius * 0.6
     state.parts = state.track.treasureVerts.map((vert, index) => {
+      let diffAngle = Math.atan2(
+        vert[1] - game.dragonVert[1],
+        vert[0] - game.dragonVert[0]
+      )
       return {
         type: game.treasures[index],
-        x: vert[0],
-        y: vert[1],
+        x: vert[0] - (Math.cos(diffAngle) * distanceFromEdge),
+        y: vert[1] - (Math.sin(diffAngle) * distanceFromEdge),
         radius
       }
     })
@@ -381,12 +386,11 @@ const game = {
   },
   orderChangeTime: 50,
   orderWaitTime: 2000,
-  orderYIn: -0.25,
   orderYOut: -1.25,
   dragonStateHandlerMap: {
     in: (order) => {
       const frac = order.timer / game.orderChangeTime
-      order.y = global.lerp(game.orderYOut, game.orderYIn, frac)
+      order.y = global.lerp(game.orderYOut, game.dragonVert[1], frac)
       if (order.timer > game.orderChangeTime) {
         order.state = 'waiting'
         order.timer = 0
@@ -397,7 +401,7 @@ const game = {
     },
     out: (order) => {
       const frac = order.timer / game.orderChangeTime
-      order.y = global.lerp(game.orderYIn, game.orderYOut, frac)
+      order.y = global.lerp(game.dragonVert[1], game.orderYOut, frac)
       if (order.timer > game.orderChangeTime) {
         order.state = 'in'
         order.timer = Math.floor(global.rangeRand(-300, 0))
