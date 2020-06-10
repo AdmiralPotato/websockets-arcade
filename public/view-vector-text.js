@@ -2,7 +2,7 @@ window.vectorTextDefsComponent = {
   name: 'vector-text-defs',
   created: function () {
     this.characterMap = {}
-    Object.entries(window.vectorTextData).forEach(([id, characterData]) => {
+    Object.entries(window.vectorTextData).forEach(([char, characterData]) => {
       let data = []
       let vertA
       let vertB
@@ -15,7 +15,7 @@ window.vectorTextDefsComponent = {
         }
         data.push(`L ${vertB.join()}`)
       })
-      this.characterMap[id] = data.join(' ')
+      this.characterMap[char.charCodeAt(0)] = data.join(' ')
     })
   },
   template: `
@@ -126,17 +126,17 @@ window.vectorTextComponent = {
           let offsetCharCount = textAlignTypes[t.textAlign].charOffset(line.length)
           line.split('').forEach((char) => {
             if (char === ' ') {
-                  // This is a space character.
-                  // I need to bump over the text by one char,
-                  // but I don't need to add any geom.
+              // This is a space character.
+              // I need to bump over the text by one char,
+              // but I don't need to add any geom.
             } else if (char === '\t') {
-                  // This is a tab character.
-                  // I need to bump over the text by TWO chars,
-                  // but I don't need to add any geom.
+              // This is a tab character.
+              // I need to bump over the text by TWO chars,
+              // but I don't need to add any geom.
               offsetCharCount += 1
             } else if (window.vectorTextData.hasOwnProperty(char)) {
               t.characters.push({
-                char,
+                char: char.charCodeAt(0),
                 pos: [
                   (((t.characterWidth + t.letterSpacing) * offsetCharCount) + offsetSpacing) * t.fontSize,
                   ((t.lineHeight * lineIndex) - t.characterHeightOffset) * t.fontSize
@@ -159,7 +159,7 @@ window.vectorTextComponent = {
     <g
       class="vector-text"
       :transform="'translate('+ pos +'),scale('+ scale +')'"
-      :data-state="stateString + ';' + cachedState"
+      :key="stateString + ';' + cachedState"
     >
       <use
         v-for="(item,index) in characters"
