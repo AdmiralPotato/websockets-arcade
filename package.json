@@ -41,7 +41,7 @@
     "morgan": "^1.9.1",
     "nipplejs": "^0.8.1",
     "point-in-polygon": "^1.0.1",
-    "socket.io": "^2.2.0",
+    "socket.io": "^2.4.0",
     "vue": "^2.6.6"
   },
   "devDependencies": {
