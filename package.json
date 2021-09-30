@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/AdmiralPotato/websockets-arcade#readme",
   "engines": {
-    "node": "8.x"
+    "node": "14.x"
   },
   "dependencies": {
     "dotenv": "^10.0.0",
