@@ -7,7 +7,9 @@ const gamepadSampler = {
     const gamepadList = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : [])
     // even though the list reports a length of N, some of those items null? wtf chrome > 73
     for (let i = 0; i < gamepadList.length; i++) {
-      const gamepad = gamepadList.item(i)
+      const gamepad = gamepadList.item
+        ? gamepadList.item(i)
+        : gamepadList[i]
       if (gamepad) {
         gamepads.push(gamepad)
       }
@@ -76,7 +78,7 @@ gamepadEvents.addEventListener('change', (event) => {
     y: 0,
     start: false
   }
-  let centered = (
+  const centered = (
     Math.abs(event.axes[0]) < deadzone &&
     Math.abs(event.axes[1]) < deadzone
   )
@@ -121,7 +123,7 @@ window.attachGamepadInputToPlayer = (socket, player) => {
   }
   const moveListener = (event) => {
     if (event.id !== player.controller) { return }
-    let angle = Math.atan2(-event.y, event.x)
+    const angle = Math.atan2(-event.y, event.x)
     if (!player.connected) {
       window.Vue.set(player, 'angle', ((-angle + tau) % tau) / deg)
     } else {
@@ -138,7 +140,7 @@ window.attachGamepadInputToPlayer = (socket, player) => {
   }
   const endListener = (event) => {
     if (event.id !== player.controller || !player.connected) { return }
-    socket.emit('release', {id: player.id})
+    socket.emit('release', { id: player.id })
   }
   const disconnectGamepad = function () {
     gamepadEvents.removeEventListener('start', startListener)
